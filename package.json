@@ -1,0 +1,11 @@
+{
+  "name": "climb-edit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "支持35cm、15cm管件的攀爬架三维编辑器",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --bind 127.0.0.1",
+    "check": "node scripts/check.mjs"
+  }
+}

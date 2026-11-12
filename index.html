@@ -1,0 +1,2338 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>蹦床＋吊环 · 立体搭建参考</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #263d36;
+        --muted: #748278;
+        --line: #d7dfd6;
+        --surface: #fffefb;
+        --green: #28654e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f3f4ee;
+        color: var(--ink);
+        font:
+          14px/1.5 system-ui,
+          -apple-system,
+          "PingFang SC",
+          sans-serif;
+      }
+      header {
+        padding: 21px 28px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 650;
+        margin: 0;
+      }
+      header p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 1px;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      button,
+      select {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--ink);
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #e6eee5;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      canvas:focus-visible {
+        outline: 3px solid #6ca4bd;
+        outline-offset: 3px;
+      }
+      button[aria-pressed="true"] {
+        background: var(--green);
+        color: white;
+        border-color: var(--green);
+      }
+      .views,
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .stage {
+        position: relative;
+        margin: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #f2f2eb;
+        height: calc(100dvh - 151px);
+        min-height: 520px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        cursor: grab;
+      }
+      canvas.dragging {
+        cursor: grabbing;
+      }
+      .topbar {
+        position: absolute;
+        top: 16px;
+        left: 18px;
+        right: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 10px;
+        pointer-events: none;
+      }
+      .topbar > * {
+        pointer-events: auto;
+      }
+      .control {
+        padding: 9px 12px;
+        background: #fffefbef;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .control input {
+        width: 100px;
+        accent-color: var(--green);
+      }
+      .control output {
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 30px;
+      }
+      .zoom {
+        position: absolute;
+        right: 18px;
+        bottom: 68px;
+        display: grid;
+        gap: 7px;
+      }
+      .zoom button {
+        width: 44px;
+        height: 44px;
+        font-size: 23px;
+        line-height: 1;
+      }
+      .zoom .reset {
+        font-size: 12px;
+      }
+      .hint {
+        position: absolute;
+        bottom: 18px;
+        left: 20px;
+        color: var(--muted);
+        font-size: 12px;
+        pointer-events: none;
+      }
+      .detail {
+        position: absolute;
+        left: 18px;
+        bottom: 48px;
+        max-width: calc(100% - 95px);
+        border-radius: 12px;
+        padding: 10px 14px;
+        background: #fffefbf0;
+        border: 1px solid var(--line);
+        font-size: 13px;
+        pointer-events: none;
+      }
+      .detail:empty {
+        display: none;
+      }
+      .detail strong {
+        margin-right: 8px;
+      }
+      .parts {
+        position: absolute;
+        right: 18px;
+        top: 72px;
+        width: 290px;
+        max-width: calc(100% - 36px);
+        padding: 17px;
+        background: #fffefbf5;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 12px 36px #344c3512;
+      }
+      .parts[hidden] {
+        display: none;
+      }
+      .parts h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      .parts label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .parts select {
+        display: block;
+        width: 100%;
+        margin: 5px 0 12px;
+      }
+      .parts p {
+        font-size: 12px;
+        margin: 9px 0;
+      }
+      .parts table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .parts td {
+        padding: 4px 0;
+      }
+      .parts td:last-child {
+        text-align: right;
+      }
+      .parts button {
+        width: 100%;
+        margin-top: 12px;
+      }
+      .badge {
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: #fffefbdb;
+        border: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      footer {
+        padding: 10px 25px;
+        color: #6b756c;
+        font-size: 12px;
+      }
+      .error {
+        padding: 40px;
+        max-width: 500px;
+        margin: auto;
+      }
+      .error[hidden] {
+        display: none;
+      }
+      @media (max-width: 680px) {
+        header {
+          padding: 15px 17px;
+          align-items: start;
+          flex-direction: column;
+          gap: 12px;
+        }
+        h1 {
+          font-size: 20px;
+        }
+        .stage {
+          margin: 0 8px;
+          height: calc(100dvh - 212px);
+          min-height: 470px;
+          border-radius: 15px;
+        }
+        .topbar {
+          top: 12px;
+          left: 12px;
+          right: 12px;
+          flex-wrap: wrap;
+        }
+        .badge {
+          display: none;
+        }
+        .control {
+          padding: 7px 9px;
+          font-size: 12px;
+        }
+        .control input {
+          width: 80px;
+        }
+        .zoom {
+          right: 12px;
+        }
+        .views button {
+          padding: 6px 10px;
+        }
+        .hint {
+          left: 12px;
+          bottom: 14px;
+          font-size: 11px;
+        }
+        .detail {
+          left: 12px;
+          font-size: 12px;
+        }
+        .parts {
+          top: 61px;
+          right: 12px;
+        }
+        footer {
+          padding: 9px 14px;
+          font-size: 11px;
+        }
+      }
+      @media print {
+        .stage {
+          height: 800px;
+        }
+        .topbar,
+        .zoom,
+        .views,
+        .hint,
+        .parts {
+          display: none;
+        }
+      }
+
+      .parts {
+        max-height: calc(100% - 90px);
+        overflow: auto;
+        width: 330px;
+      }
+      .editor-fields {
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+      .editor-fields[hidden] {
+        display: none;
+      }
+      .editor-row {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+      }
+      .editor-row > * {
+        min-width: 0;
+        flex: 1;
+      }
+      .editor-fields button {
+        margin: 4px 0;
+        padding: 7px;
+      }
+      .editor-fields select {
+        margin-bottom: 8px;
+      }
+      .editor-fields button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .editor-fields .check {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 10px 0;
+      }
+      .editor-fields .note {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      #edit-status {
+        font-size: 12px;
+        min-height: 18px;
+      }
+      #edit-selected {
+        font-size: 12px;
+        margin: 8px 0;
+      }
+      .parts h2 {
+        margin-bottom: 4px;
+      }
+      #length-counts {
+        margin-top: 0;
+        color: var(--muted);
+      }
+      .parts [hidden] {
+        display: none;
+      }
+      .parts:not([hidden]) ~ .zoom {
+        display: none;
+      }
+      @media (max-width: 680px) {
+        .topbar {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .topbar .control {
+          justify-self: start;
+        }
+        .topbar .actions {
+          justify-self: end;
+        }
+        .parts {
+          top: 112px;
+          max-height: calc(100% - 130px);
+        }
+      }
+      .parts:not([hidden]) ~ .detail {
+        display: none;
+      }
+
+      .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .panel-heading button {
+        width: auto;
+        margin: 0;
+        padding: 5px 10px;
+      }
+      .editor-tabs {
+        display: flex;
+        gap: 5px;
+        margin: 12px 0;
+      }
+      .editor-tabs button {
+        flex: 1;
+        font-size: 12px;
+      }
+      .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 7px;
+      }
+      .choice-grid.directions {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .parts [hidden] {
+        display: none;
+      }
+      .stock-details {
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+      .stock-details summary {
+        cursor: pointer;
+      }
+      .parts #edit-status {
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+        padding: 10px 0;
+        margin-bottom: 0;
+      }
+      .parts #confirm-add {
+        background: var(--green);
+        color: white;
+      }
+      #add-section #new-length {
+        display: none;
+      }
+      #add-section .editor-row > label:first-child {
+        display: none;
+      }
+      @media (max-width: 680px) {
+        .stage:has(.parts:not([hidden])) canvas {
+          height: 52%;
+        }
+        .parts {
+          top: auto;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          max-width: 100%;
+          height: 48%;
+          max-height: 48%;
+          border-radius: 18px 18px 0 0;
+          padding: 14px;
+          box-shadow: 0 -6px 24px #263d3610;
+        }
+        .stage:has(.parts:not([hidden])) .hint {
+          display: none;
+        }
+        .parts .panel-heading {
+          position: sticky;
+          top: -14px;
+          background: var(--surface);
+          z-index: 2;
+          padding: 8px 0;
+        }
+        .parts button {
+          min-height: 40px;
+        }
+        .editor-fields {
+          margin-top: 8px;
+          padding-top: 8px;
+        }
+      }
+
+      .parts #edit-status:empty {
+        display: none;
+      }
+      @media (max-width: 680px) {
+        .stage:has(.parts:not([hidden])) canvas {
+          height: 45%;
+        }
+        .parts {
+          height: 55%;
+          max-height: 55%;
+        }
+        .parts #length-counts,
+        .parts label[for="part-select"],
+        .parts #edit-selected {
+          display: none;
+        }
+        .parts #part-select {
+          margin-bottom: 5px;
+        }
+        .parts .editor-fields {
+          padding-top: 5px;
+          margin-top: 5px;
+        }
+        .parts .editor-tabs {
+          margin: 6px 0;
+        }
+        .parts .panel-heading h2 {
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>蹦床＋吊环攀爬架</h1>
+        <p>默认4层 · 35cm / 15cm · 支持45°屋顶</p>
+      </div>
+      <nav class="views" aria-label="模型视角">
+        <button data-view="perspective" aria-pressed="true">立体</button
+        ><button data-view="front" aria-pressed="false">正面</button><button data-view="side" aria-pressed="false">侧面</button
+        ><button data-view="top" aria-pressed="false">俯视</button>
+      </nav>
+    </header>
+    <main class="stage">
+      <canvas
+        id="scene"
+        tabindex="0"
+        aria-label="蹦床和吊环攀爬架三维模型。拖动旋转，滚轮或加减键缩放，方向键旋转，按0复位。"
+      ></canvas>
+      <div id="error" class="error" hidden>当前浏览器未启用WebGL，请开启硬件加速后重新打开本图纸。</div>
+      <div class="topbar">
+        <label class="control"
+          >展开 <input id="explode" type="range" min="0" max="100" value="0" aria-label="爆炸图向外展开倍率" /><output
+            id="explode-label"
+            >1.0×</output
+          ></label
+        >
+        <div class="actions">
+          <span class="badge">拖动旋转 · 滚轮缩放</span><button id="edit-toggle" aria-pressed="false">编辑模式</button
+          ><button id="parts-toggle" aria-expanded="false" aria-controls="parts-panel">查看配件</button>
+        </div>
+      </div>
+      <aside id="parts-panel" class="parts" hidden>
+        <div class="panel-heading">
+          <h2 id="counts"></h2>
+          <button id="close-panel" aria-label="收起面板">收起</button>
+        </div>
+        <p id="length-counts"></p>
+        <p id="draft-status" class="note" role="status"></p>
+        <div id="draft-recovery" class="editor-row" hidden>
+          <button id="restore-draft">恢复本地草稿</button><button id="discard-draft">删除本地草稿</button>
+        </div>
+        <label for="part-select">点模型选部件，也可在此查找</label
+        ><select id="part-select">
+          <option value="">整体模型</option>
+        </select>
+        <div id="edit-fields" class="editor-fields" hidden>
+          <div class="editor-row">
+            <button id="undo" disabled>撤销</button><button id="redo" disabled>重做</button
+            ><button id="fit-model">适应视图</button>
+          </div>
+          <p id="edit-selected"></p>
+          <div class="editor-row"><button id="focus-part">定位选中部件</button><button id="quick-save">保存HTML</button></div>
+          <div class="editor-tabs">
+            <button id="tab-adjust" aria-pressed="true">调整部件</button
+            ><button id="tab-add" aria-pressed="false">添加管子</button
+            ><button id="tab-files" aria-pressed="false">方案管理</button>
+          </div>
+          <div id="adjust-section">
+            <label id="anchor-row"
+              >操作端点<select id="anchor">
+                <option value="start">起点（改长度时固定此端）</option>
+                <option value="end">终点（改长度时固定此端）</option>
+              </select></label
+            >
+            <div id="resize-fields" hidden>
+              <div class="editor-row">
+                <label
+                  >管子长度<select id="resize-length">
+                    <option value="35">35cm</option>
+                    <option value="15">15cm</option>
+                  </select></label
+                ><button id="resize-pipe">应用长度</button>
+              </div>
+              <p class="note">改长度会断开另一端，其他管子保持原位；不会自动拉伸整个框架。</p>
+            </div>
+            <div id="joint-fields" hidden>
+              <label
+                >接头型号<select id="connector-model">
+                  <option value="自动">按方向自动匹配</option>
+                </select></label
+              >
+              <label>接头朝向<select id="connector-orientation" aria-describedby="orientation-help"></select></label>
+              <p id="orientation-help" class="note"></p>
+              <button id="add-from-joint">从此接头添加管子</button>
+            </div>
+            <button id="delete-part" disabled>删除选中部件</button>
+          </div>
+          <div id="add-section" hidden>
+            <div id="add-anchor-row" class="editor-row">
+              <button data-anchor="start">从起点A添加</button><button data-anchor="end">从终点B添加</button>
+            </div>
+            <p class="note">选择长度和方向 → 查看蓝色预览 → 确认添加</p>
+            <div class="editor-row">
+              <label
+                >新增管长<select id="new-length">
+                  <option value="35">35cm</option>
+                  <option value="15">15cm</option>
+                </select></label
+              ><label>新增方向<select id="direction"></select></label>
+            </div>
+            <div id="length-buttons" class="choice-grid"></div>
+            <div id="direction-buttons" class="choice-grid directions"></div>
+            <button id="add-pipe">预览新管</button>
+            <div id="preview-actions" class="editor-row" hidden>
+              <button id="confirm-add">确认添加</button><button id="cancel-add">取消预览</button>
+            </div>
+          </div>
+          <div id="files-section" hidden>
+            <label class="check"><input id="accessories" type="checkbox" checked />显示原图软垫、蹦床及吊环</label>
+            <p class="note">
+              附件保留显示，位置固定，仅作参考。35/15cm按管轴长建模，未计入接头外壳与插入量。45接头按管路转向45°建模。
+            </p>
+            <div class="editor-row"><button id="new-design">新建空白</button><button id="roof-example">屋顶示例</button></div>
+            <button id="restore-reference">恢复参考图</button>
+            <div class="editor-row">
+              <button id="save-design">保存方案JSON</button><button id="import-design">导入方案</button>
+            </div>
+            <input id="design-file" type="file" accept=".json,application/json" hidden /><button id="export-html">
+              导出当前方案HTML
+            </button>
+            <p class="note">编辑后尝试自动保存到当前浏览器。跨设备使用或长期备份，请导出JSON或HTML。</p>
+          </div>
+          <p id="edit-status" role="status" aria-live="polite"></p>
+        </div>
+        <details class="stock-details">
+          <summary>查看配件统计与清单</summary>
+          <table aria-label="接头形状数量">
+            <tbody id="joint-counts"></tbody>
+          </table>
+          <p>统计为本图整架用量；不含锁紧小件及待确认的固定件。</p>
+          <button id="download">导出逐件清单</button>
+        </details>
+      </aside>
+      <div class="zoom">
+        <button id="zoom-in" aria-label="放大">＋</button><button id="zoom-out" aria-label="缩小">−</button
+        ><button id="fit-all" class="reset" aria-label="显示完整模型">全图</button
+        ><button id="reset" class="reset" aria-label="复位视角">复位</button>
+      </div>
+      <div id="detail" class="detail" aria-live="polite"></div>
+      <div class="hint">拖动：旋转　右键 / Shift拖动：平移　双指：缩放和平移</div>
+    </main>
+    <footer>编辑仅检查几何连接，不验证承重、夹困或防侧翻；吊环、蹦床与自定义屋顶不能直接据此承重使用。</footer>
+    <script id="saved-design" type="application/json">
+      null
+    </script>
+    <script>
+      let model = {
+        pipes: [
+          { a: [0, 0, 0], b: [1, 0, 0], group: "底座", id: "P001", start: "J001", end: "J002" },
+          { a: [1, 0, 0], b: [2, 0, 0], group: "底座", id: "P002", start: "J002", end: "J003" },
+          { a: [2, 0, 0], b: [3, 0, 0], group: "底座", id: "P003", start: "J003", end: "J004" },
+          { a: [0, 2, 0], b: [1, 2, 0], group: "底座", id: "P004", start: "J008", end: "J009" },
+          { a: [1, 2, 0], b: [2, 2, 0], group: "底座", id: "P005", start: "J009", end: "J010" },
+          { a: [2, 2, 0], b: [3, 2, 0], group: "底座", id: "P006", start: "J010", end: "J011" },
+          { a: [0, 0, 0], b: [0, 1, 0], group: "底座", id: "P007", start: "J001", end: "J005" },
+          { a: [0, 1, 0], b: [0, 2, 0], group: "底座", id: "P008", start: "J005", end: "J008" },
+          { a: [3, 0, 0], b: [3, 1, 0], group: "底座", id: "P009", start: "J004", end: "J007" },
+          { a: [3, 1, 0], b: [3, 2, 0], group: "底座", id: "P010", start: "J007", end: "J011" },
+          { a: [1, 0, 0], b: [1, 1, 0], group: "底座", id: "P011", start: "J002", end: "J006" },
+          { a: [1, 1, 0], b: [1, 2, 0], group: "底座", id: "P012", start: "J006", end: "J009" },
+          { a: [0, 1, 0], b: [1, 1, 0], group: "底座", id: "P013", start: "J005", end: "J006" },
+          { a: [0, 0, 0], b: [0, 0, 1], group: "立柱", id: "P014", start: "J001", end: "J012" },
+          { a: [0, 0, 1], b: [0, 0, 2], group: "立柱", id: "P015", start: "J012", end: "J023" },
+          { a: [0, 0, 2], b: [0, 0, 3], group: "立柱", id: "P016", start: "J023", end: "J034" },
+          { a: [0, 1, 0], b: [0, 1, 1], group: "立柱", id: "P017", start: "J005", end: "J016" },
+          { a: [0, 1, 1], b: [0, 1, 2], group: "立柱", id: "P018", start: "J016", end: "J027" },
+          { a: [0, 1, 2], b: [0, 1, 3], group: "立柱", id: "P019", start: "J027", end: "J036" },
+          { a: [0, 1, 3], b: [0, 1, 4], group: "立柱", id: "P020", start: "J036", end: "J043" },
+          { a: [0, 2, 0], b: [0, 2, 1], group: "立柱", id: "P021", start: "J008", end: "J019" },
+          { a: [0, 2, 1], b: [0, 2, 2], group: "立柱", id: "P022", start: "J019", end: "J030" },
+          { a: [0, 2, 2], b: [0, 2, 3], group: "立柱", id: "P023", start: "J030", end: "J038" },
+          { a: [0, 2, 3], b: [0, 2, 4], group: "立柱", id: "P024", start: "J038", end: "J046" },
+          { a: [1, 0, 0], b: [1, 0, 1], group: "立柱", id: "P025", start: "J002", end: "J013" },
+          { a: [1, 0, 1], b: [1, 0, 2], group: "立柱", id: "P026", start: "J013", end: "J024" },
+          { a: [1, 1, 0], b: [1, 1, 1], group: "立柱", id: "P027", start: "J006", end: "J017" },
+          { a: [1, 1, 1], b: [1, 1, 2], group: "立柱", id: "P028", start: "J017", end: "J028" },
+          { a: [1, 1, 2], b: [1, 1, 3], group: "立柱", id: "P029", start: "J028", end: "J037" },
+          { a: [1, 1, 3], b: [1, 1, 4], group: "立柱", id: "P030", start: "J037", end: "J044" },
+          { a: [1, 2, 0], b: [1, 2, 1], group: "立柱", id: "P031", start: "J009", end: "J020" },
+          { a: [1, 2, 1], b: [1, 2, 2], group: "立柱", id: "P032", start: "J020", end: "J031" },
+          { a: [1, 2, 2], b: [1, 2, 3], group: "立柱", id: "P033", start: "J031", end: "J039" },
+          { a: [1, 2, 3], b: [1, 2, 4], group: "立柱", id: "P034", start: "J039", end: "J047" },
+          { a: [2, 0, 0], b: [2, 0, 1], group: "立柱", id: "P035", start: "J003", end: "J014" },
+          { a: [2, 0, 1], b: [2, 0, 2], group: "立柱", id: "P036", start: "J014", end: "J025" },
+          { a: [2, 0, 2], b: [2, 0, 3], group: "立柱", id: "P037", start: "J025", end: "J035" },
+          { a: [2, 0, 3], b: [2, 0, 4], group: "立柱", id: "P038", start: "J035", end: "J042" },
+          { a: [2, 2, 0], b: [2, 2, 1], group: "立柱", id: "P039", start: "J010", end: "J021" },
+          { a: [2, 2, 1], b: [2, 2, 2], group: "立柱", id: "P040", start: "J021", end: "J032" },
+          { a: [2, 2, 2], b: [2, 2, 3], group: "立柱", id: "P041", start: "J032", end: "J040" },
+          { a: [2, 2, 3], b: [2, 2, 4], group: "立柱", id: "P042", start: "J040", end: "J048" },
+          { a: [3, 0, 0], b: [3, 0, 1], group: "立柱", id: "P043", start: "J004", end: "J015" },
+          { a: [3, 0, 1], b: [3, 0, 2], group: "立柱", id: "P044", start: "J015", end: "J026" },
+          { a: [3, 2, 0], b: [3, 2, 1], group: "立柱", id: "P045", start: "J011", end: "J022" },
+          { a: [3, 2, 1], b: [3, 2, 2], group: "立柱", id: "P046", start: "J022", end: "J033" },
+          { a: [3, 2, 2], b: [3, 2, 3], group: "立柱", id: "P047", start: "J033", end: "J041" },
+          { a: [3, 2, 3], b: [3, 2, 4], group: "立柱", id: "P048", start: "J041", end: "J049" },
+          { a: [0, 0, 2], b: [1, 0, 2], group: "低平台边框", id: "P049", start: "J023", end: "J024" },
+          { a: [0, 1, 2], b: [1, 1, 2], group: "低平台边框", id: "P050", start: "J027", end: "J028" },
+          { a: [0, 0, 2], b: [0, 1, 2], group: "低平台边框", id: "P051", start: "J023", end: "J027" },
+          { a: [1, 0, 2], b: [1, 1, 2], group: "低平台边框", id: "P052", start: "J024", end: "J028" },
+          { a: [0, 1, 3], b: [1, 1, 3], group: "高平台边框", id: "P053", start: "J036", end: "J037" },
+          { a: [0, 2, 3], b: [1, 2, 3], group: "高平台边框", id: "P054", start: "J038", end: "J039" },
+          { a: [0, 1, 3], b: [0, 2, 3], group: "高平台边框", id: "P055", start: "J036", end: "J038" },
+          { a: [1, 1, 3], b: [1, 2, 3], group: "高平台边框", id: "P056", start: "J037", end: "J039" },
+          { a: [0, 0, 3], b: [0, 1, 3], group: "低平台护栏", id: "P057", start: "J034", end: "J036" },
+          { a: [0, 1, 4], b: [1, 1, 4], group: "高平台护栏", id: "P058", start: "J043", end: "J044" },
+          { a: [0, 2, 4], b: [1, 2, 4], group: "高平台护栏", id: "P059", start: "J046", end: "J047" },
+          { a: [0, 1, 4], b: [0, 2, 4], group: "高平台护栏", id: "P060", start: "J043", end: "J046" },
+          { a: [1, 0, 1], b: [2, 0, 1], group: "蹦床边框", id: "P061", start: "J013", end: "J014" },
+          { a: [2, 0, 1], b: [3, 0, 1], group: "蹦床边框", id: "P062", start: "J014", end: "J015" },
+          { a: [1, 2, 1], b: [2, 2, 1], group: "蹦床边框", id: "P063", start: "J020", end: "J021" },
+          { a: [2, 2, 1], b: [3, 2, 1], group: "蹦床边框", id: "P064", start: "J021", end: "J022" },
+          { a: [1, 0, 1], b: [1, 1, 1], group: "蹦床边框", id: "P065", start: "J013", end: "J017" },
+          { a: [1, 1, 1], b: [1, 2, 1], group: "蹦床边框", id: "P066", start: "J017", end: "J020" },
+          { a: [3, 0, 1], b: [3, 1, 1], group: "蹦床边框", id: "P067", start: "J015", end: "J018" },
+          { a: [3, 1, 1], b: [3, 2, 1], group: "蹦床边框", id: "P068", start: "J018", end: "J022" },
+          { a: [3, 0, 2], b: [3, 1, 2], group: "蹦床侧栏", id: "P069", start: "J026", end: "J029" },
+          { a: [3, 1, 2], b: [3, 2, 2], group: "蹦床侧栏", id: "P070", start: "J029", end: "J033" },
+          { a: [1, 2, 4], b: [2, 2, 4], group: "蹦床后栏", id: "P071", start: "J047", end: "J048" },
+          { a: [2, 2, 4], b: [3, 2, 4], group: "蹦床后栏", id: "P072", start: "J048", end: "J049" },
+          { a: [1, 0, 2], b: [2, 0, 2], group: "蹦床前栏", id: "P073", start: "J024", end: "J025" },
+          { a: [2, 0, 2], b: [3, 0, 2], group: "蹦床前栏", id: "P074", start: "J025", end: "J026" },
+          { a: [1, 1, 2], b: [1, 2, 2], group: "爬梯横档", id: "P075", start: "J028", end: "J031" },
+          { a: [2, 0, 4], b: [2, 1, 4], group: "吊环横梁", id: "P076", start: "J042", end: "J045" },
+          { a: [2, 1, 4], b: [2, 2, 4], group: "吊环横梁", id: "P077", start: "J045", end: "J048" },
+          { a: [1, 1, 4], b: [1, 2, 4], group: "顶部框架", id: "P078", start: "J044", end: "J047" },
+          { a: [1, 1, 4], b: [2, 1, 4], group: "顶部连接横杆", id: "P079", start: "J044", end: "J045" }
+        ],
+        joints: [
+          { id: "J001", p: [0, 0, 0], ports: ["+X", "+Y", "+Z"], pipes: ["P001", "P007", "P014"], type: "立体三通" },
+          {
+            id: "J002",
+            p: [1, 0, 0],
+            ports: ["-X", "+X", "+Y", "+Z"],
+            pipes: ["P001", "P002", "P011", "P025"],
+            type: "立体四通"
+          },
+          { id: "J003", p: [2, 0, 0], ports: ["-X", "+X", "+Z"], pipes: ["P002", "P003", "P035"], type: "T形三通" },
+          { id: "J004", p: [3, 0, 0], ports: ["-X", "+Y", "+Z"], pipes: ["P003", "P009", "P043"], type: "立体三通" },
+          {
+            id: "J005",
+            p: [0, 1, 0],
+            ports: ["-Y", "+Y", "+X", "+Z"],
+            pipes: ["P007", "P008", "P013", "P017"],
+            type: "立体四通"
+          },
+          {
+            id: "J006",
+            p: [1, 1, 0],
+            ports: ["-Y", "+Y", "-X", "+Z"],
+            pipes: ["P011", "P012", "P013", "P027"],
+            type: "立体四通"
+          },
+          { id: "J007", p: [3, 1, 0], ports: ["-Y", "+Y"], pipes: ["P009", "P010"], type: "直通" },
+          { id: "J008", p: [0, 2, 0], ports: ["+X", "-Y", "+Z"], pipes: ["P004", "P008", "P021"], type: "立体三通" },
+          {
+            id: "J009",
+            p: [1, 2, 0],
+            ports: ["-X", "+X", "-Y", "+Z"],
+            pipes: ["P004", "P005", "P012", "P031"],
+            type: "立体四通"
+          },
+          { id: "J010", p: [2, 2, 0], ports: ["-X", "+X", "+Z"], pipes: ["P005", "P006", "P039"], type: "T形三通" },
+          { id: "J011", p: [3, 2, 0], ports: ["-X", "-Y", "+Z"], pipes: ["P006", "P010", "P045"], type: "立体三通" },
+          { id: "J012", p: [0, 0, 1], ports: ["-Z", "+Z"], pipes: ["P014", "P015"], type: "直通" },
+          {
+            id: "J013",
+            p: [1, 0, 1],
+            ports: ["-Z", "+Z", "+X", "+Y"],
+            pipes: ["P025", "P026", "P061", "P065"],
+            type: "立体四通"
+          },
+          {
+            id: "J014",
+            p: [2, 0, 1],
+            ports: ["-Z", "+Z", "-X", "+X"],
+            pipes: ["P035", "P036", "P061", "P062"],
+            type: "平面四通"
+          },
+          {
+            id: "J015",
+            p: [3, 0, 1],
+            ports: ["-Z", "+Z", "-X", "+Y"],
+            pipes: ["P043", "P044", "P062", "P067"],
+            type: "立体四通"
+          },
+          { id: "J016", p: [0, 1, 1], ports: ["-Z", "+Z"], pipes: ["P017", "P018"], type: "直通" },
+          {
+            id: "J017",
+            p: [1, 1, 1],
+            ports: ["-Z", "+Z", "-Y", "+Y"],
+            pipes: ["P027", "P028", "P065", "P066"],
+            type: "平面四通"
+          },
+          { id: "J018", p: [3, 1, 1], ports: ["-Y", "+Y"], pipes: ["P067", "P068"], type: "直通" },
+          { id: "J019", p: [0, 2, 1], ports: ["-Z", "+Z"], pipes: ["P021", "P022"], type: "直通" },
+          {
+            id: "J020",
+            p: [1, 2, 1],
+            ports: ["-Z", "+Z", "+X", "-Y"],
+            pipes: ["P031", "P032", "P063", "P066"],
+            type: "立体四通"
+          },
+          {
+            id: "J021",
+            p: [2, 2, 1],
+            ports: ["-Z", "+Z", "-X", "+X"],
+            pipes: ["P039", "P040", "P063", "P064"],
+            type: "平面四通"
+          },
+          {
+            id: "J022",
+            p: [3, 2, 1],
+            ports: ["-Z", "+Z", "-X", "-Y"],
+            pipes: ["P045", "P046", "P064", "P068"],
+            type: "立体四通"
+          },
+          {
+            id: "J023",
+            p: [0, 0, 2],
+            ports: ["-Z", "+Z", "+X", "+Y"],
+            pipes: ["P015", "P016", "P049", "P051"],
+            type: "立体四通"
+          },
+          {
+            id: "J024",
+            p: [1, 0, 2],
+            ports: ["-Z", "-X", "+Y", "+X"],
+            pipes: ["P026", "P049", "P052", "P073"],
+            type: "立体四通"
+          },
+          {
+            id: "J025",
+            p: [2, 0, 2],
+            ports: ["-Z", "+Z", "-X", "+X"],
+            pipes: ["P036", "P037", "P073", "P074"],
+            type: "平面四通"
+          },
+          { id: "J026", p: [3, 0, 2], ports: ["-Z", "+Y", "-X"], pipes: ["P044", "P069", "P074"], type: "立体三通" },
+          {
+            id: "J027",
+            p: [0, 1, 2],
+            ports: ["-Z", "+Z", "+X", "-Y"],
+            pipes: ["P018", "P019", "P050", "P051"],
+            type: "立体四通"
+          },
+          {
+            id: "J028",
+            p: [1, 1, 2],
+            ports: ["-Z", "+Z", "-X", "-Y", "+Y"],
+            pipes: ["P028", "P029", "P050", "P052", "P075"],
+            type: "立体五通"
+          },
+          { id: "J029", p: [3, 1, 2], ports: ["-Y", "+Y"], pipes: ["P069", "P070"], type: "直通" },
+          { id: "J030", p: [0, 2, 2], ports: ["-Z", "+Z"], pipes: ["P022", "P023"], type: "直通" },
+          { id: "J031", p: [1, 2, 2], ports: ["-Z", "+Z", "-Y"], pipes: ["P032", "P033", "P075"], type: "T形三通" },
+          { id: "J032", p: [2, 2, 2], ports: ["-Z", "+Z"], pipes: ["P040", "P041"], type: "直通" },
+          { id: "J033", p: [3, 2, 2], ports: ["-Z", "+Z", "-Y"], pipes: ["P046", "P047", "P070"], type: "T形三通" },
+          { id: "J034", p: [0, 0, 3], ports: ["-Z", "+Y"], pipes: ["P016", "P057"], type: "直角二通" },
+          { id: "J035", p: [2, 0, 3], ports: ["-Z", "+Z"], pipes: ["P037", "P038"], type: "直通" },
+          {
+            id: "J036",
+            p: [0, 1, 3],
+            ports: ["-Z", "+Z", "+X", "+Y", "-Y"],
+            pipes: ["P019", "P020", "P053", "P055", "P057"],
+            type: "立体五通"
+          },
+          {
+            id: "J037",
+            p: [1, 1, 3],
+            ports: ["-Z", "+Z", "-X", "+Y"],
+            pipes: ["P029", "P030", "P053", "P056"],
+            type: "立体四通"
+          },
+          {
+            id: "J038",
+            p: [0, 2, 3],
+            ports: ["-Z", "+Z", "+X", "-Y"],
+            pipes: ["P023", "P024", "P054", "P055"],
+            type: "立体四通"
+          },
+          {
+            id: "J039",
+            p: [1, 2, 3],
+            ports: ["-Z", "+Z", "-X", "-Y"],
+            pipes: ["P033", "P034", "P054", "P056"],
+            type: "立体四通"
+          },
+          { id: "J040", p: [2, 2, 3], ports: ["-Z", "+Z"], pipes: ["P041", "P042"], type: "直通" },
+          { id: "J041", p: [3, 2, 3], ports: ["-Z", "+Z"], pipes: ["P047", "P048"], type: "直通" },
+          { id: "J042", p: [2, 0, 4], ports: ["-Z", "+Y"], pipes: ["P038", "P076"], type: "直角二通" },
+          { id: "J043", p: [0, 1, 4], ports: ["-Z", "+X", "+Y"], pipes: ["P020", "P058", "P060"], type: "立体三通" },
+          {
+            id: "J044",
+            p: [1, 1, 4],
+            ports: ["-Z", "-X", "+Y", "+X"],
+            pipes: ["P030", "P058", "P078", "P079"],
+            type: "立体四通"
+          },
+          { id: "J045", p: [2, 1, 4], ports: ["-Y", "+Y", "-X"], pipes: ["P076", "P077", "P079"], type: "T形三通" },
+          { id: "J046", p: [0, 2, 4], ports: ["-Z", "+X", "-Y"], pipes: ["P024", "P059", "P060"], type: "立体三通" },
+          {
+            id: "J047",
+            p: [1, 2, 4],
+            ports: ["-Z", "-X", "+X", "-Y"],
+            pipes: ["P034", "P059", "P071", "P078"],
+            type: "立体四通"
+          },
+          {
+            id: "J048",
+            p: [2, 2, 4],
+            ports: ["-Z", "-X", "+X", "-Y"],
+            pipes: ["P042", "P071", "P072", "P077"],
+            type: "立体四通"
+          },
+          { id: "J049", p: [3, 2, 4], ports: ["-Z", "-X"], pipes: ["P048", "P072"], type: "直角二通" }
+        ],
+        counts: { 立体三通: 7, 立体四通: 17, T形三通: 5, 直通: 11, 平面四通: 4, 立体五通: 2, 直角二通: 3 }
+      };
+      const canvas = document.getElementById("scene");
+      const gl = canvas.getContext("webgl", { antialias: true, alpha: false, preserveDrawingBuffer: true });
+      const $ = id => document.getElementById(id);
+      const partsById = new Map([...model.pipes, ...model.joints].map(part => [part.id, part]));
+      const camera = { azimuth: -1.03, polar: 1.11, distance: 8.6, target: [1.5, 1, 1.8] };
+      const palette = [
+        [0.14, 0.49, 0.73],
+        [0.12, 0.57, 0.31],
+        [0.98, 0.76, 0.12],
+        [0.89, 0.18, 0.23]
+      ];
+      let selectedId = "";
+      let explosion = 0;
+      let pendingPipe = null;
+      let explodeOrigin = [1.5, 1, 2];
+      let objects = [];
+      let projectionView;
+      let projectionScale = 1;
+      let renderPending = false;
+      const add = (a, b) => a.map((v, i) => v + b[i]);
+      const sub = (a, b) => a.map((v, i) => v - b[i]);
+      const mul = (a, s) => a.map(v => v * s);
+      const dot = (a, b) => a.reduce((sum, v, i) => sum + v * b[i], 0);
+      const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+      const normalize = a => mul(a, 1 / (Math.hypot(...a) || 1));
+      function matrixMultiply(a, b) {
+        const out = new Float32Array(16);
+        for (let c = 0; c < 4; c++)
+          for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) out[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k];
+        return out;
+      }
+      function lookAt(eye, target) {
+        const z = normalize(sub(eye, target)),
+          x = normalize(cross([0, 0, 1], z)),
+          y = cross(z, x);
+        return new Float32Array([
+          x[0],
+          y[0],
+          z[0],
+          0,
+          x[1],
+          y[1],
+          z[1],
+          0,
+          x[2],
+          y[2],
+          z[2],
+          0,
+          -dot(x, eye),
+          -dot(y, eye),
+          -dot(z, eye),
+          1
+        ]);
+      }
+      function perspective(aspect) {
+        const f = 1 / Math.tan((Math.PI * 39) / 360),
+          near = 0.05,
+          far = 100;
+        return new Float32Array([
+          f / aspect,
+          0,
+          0,
+          0,
+          0,
+          f,
+          0,
+          0,
+          0,
+          0,
+          (far + near) / (near - far),
+          -1,
+          0,
+          0,
+          (2 * far * near) / (near - far),
+          0
+        ]);
+      }
+      function vertex(list, p, n) {
+        list.push(...p, ...n);
+      }
+      function triangle(list, a, b, c, na, nb = na, nc = na) {
+        vertex(list, a, na);
+        vertex(list, b, nb);
+        vertex(list, c, nc);
+      }
+      function cylinder(list, a, b, radius, sides = 12) {
+        const axis = normalize(sub(b, a));
+        const u = normalize(cross(axis, Math.abs(axis[2]) < 0.9 ? [0, 0, 1] : [0, 1, 0]));
+        const v = cross(axis, u);
+        for (let i = 0; i < sides; i++) {
+          const t = (i / sides) * Math.PI * 2,
+            t2 = ((i + 1) / sides) * Math.PI * 2;
+          const n1 = add(mul(u, Math.cos(t)), mul(v, Math.sin(t))),
+            n2 = add(mul(u, Math.cos(t2)), mul(v, Math.sin(t2)));
+          const a1 = add(a, mul(n1, radius)),
+            a2 = add(a, mul(n2, radius)),
+            b1 = add(b, mul(n1, radius)),
+            b2 = add(b, mul(n2, radius));
+          triangle(list, a1, b1, a2, n1, n1, n2);
+          triangle(list, a2, b1, b2, n2, n1, n2);
+          triangle(list, a, a2, a1, mul(axis, -1));
+          triangle(list, b, b1, b2, axis);
+        }
+      }
+      function sphere(list, center, radius) {
+        const point = (lat, lon) => [Math.sin(lat) * Math.cos(lon), Math.sin(lat) * Math.sin(lon), Math.cos(lat)];
+        for (let i = 0; i < 8; i++)
+          for (let j = 0; j < 12; j++) {
+            const n = [
+              point((i * Math.PI) / 8, (j * Math.PI) / 6),
+              point(((i + 1) * Math.PI) / 8, (j * Math.PI) / 6),
+              point(((i + 1) * Math.PI) / 8, ((j + 1) * Math.PI) / 6),
+              point((i * Math.PI) / 8, ((j + 1) * Math.PI) / 6)
+            ];
+            const p = n.map(a => add(center, mul(a, radius)));
+            triangle(list, p[0], p[1], p[2], n[0], n[1], n[2]);
+            triangle(list, p[0], p[2], p[3], n[0], n[2], n[3]);
+          }
+      }
+      function box(list, a, b) {
+        const p = [
+          [a[0], a[1], a[2]],
+          [b[0], a[1], a[2]],
+          [b[0], b[1], a[2]],
+          [a[0], b[1], a[2]],
+          [a[0], a[1], b[2]],
+          [b[0], a[1], b[2]],
+          [b[0], b[1], b[2]],
+          [a[0], b[1], b[2]]
+        ];
+        [
+          [0, 3, 2, 1],
+          [4, 5, 6, 7],
+          [0, 1, 5, 4],
+          [1, 2, 6, 5],
+          [2, 3, 7, 6],
+          [3, 0, 4, 7]
+        ].forEach(face => {
+          const [a1, b1, c1, d1] = face.map(i => p[i]);
+          const n = normalize(cross(sub(b1, a1), sub(c1, a1)));
+          triangle(list, a1, b1, c1, n);
+          triangle(list, a1, c1, d1, n);
+        });
+      }
+      function upload(vertices, color, id = "") {
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        objects.push({ buffer, count: vertices.length / 6, color, id });
+      }
+      function loopTube(list, points, radius) {
+        for (let i = 0; i < points.length - 1; i++) cylinder(list, points[i], points[i + 1], radius, 7);
+      }
+      function expandedPoint(point) {
+        return add(explodeOrigin, mul(sub(point, explodeOrigin), 1 + explosion));
+      }
+      function displayedPipe(pipe) {
+        const middle = mul(add(pipe.a, pipe.b), 0.5);
+        const offset = sub(expandedPoint(middle), middle);
+        return { a: add(pipe.a, offset), b: add(pipe.b, offset) };
+      }
+      function buildScene() {
+        if (model.joints.length)
+          explodeOrigin = [0, 1, 2].map(
+            axis => (Math.min(...model.joints.map(j => j.p[axis])) + Math.max(...model.joints.map(j => j.p[axis]))) / 2
+          );
+        objects.forEach(object => gl.deleteBuffer(object.buffer));
+        objects = [];
+        let mesh = [];
+        if (explosion === 0) {
+          box(mesh, [-1, -1, -0.13], [4, 3, -0.095]);
+          upload(mesh, [0.89, 0.9, 0.85]);
+          mesh = [];
+          for (let x = -1; x <= 4; x += 0.5) cylinder(mesh, [x, -1, -0.09], [x, 3, -0.09], 0.003, 4);
+          for (let y = -1; y <= 3; y += 0.5) cylinder(mesh, [-1, y, -0.09], [4, y, -0.09], 0.003, 4);
+          upload(mesh, [0.81, 0.84, 0.78]);
+        }
+        model.pipes.forEach((pipe, index) => {
+          mesh = [];
+          const direction = normalize(sub(pipe.b, pipe.a));
+          const trim = 0.055;
+          const displayed = displayedPipe(pipe);
+          cylinder(mesh, add(displayed.a, mul(direction, trim)), add(displayed.b, mul(direction, -trim)), 0.059, 14);
+          let color =
+            palette[(index + Math.round(pipe.a[2])) % palette.length < 0 ? 0 : (index + Math.round(pipe.a[2])) % palette.length];
+          if (pipe.group === "立柱" && pipe.a[0] === 2 && pipe.a[1] === 0)
+            color = palette[pipe.a[2] < 1 ? 2 : pipe.a[2] < 2 ? 1 : 0];
+          if (pipe.group === "立柱" && pipe.a[0] === 2 && pipe.a[1] === 2)
+            color = palette[pipe.a[2] < 1 ? 0 : pipe.a[2] < 2 ? 2 : 1];
+          if (pipe.group === "吊环横梁") color = palette[pipe.a[1] === 0 ? 2 : 1];
+          if (pipe.group === "蹦床前栏" || pipe.group === "蹦床后栏") color = palette[0];
+          upload(mesh, color, pipe.id);
+        });
+        model.joints.forEach(joint => {
+          mesh = [];
+          const center = expandedPoint(joint.p);
+          sphere(mesh, center, 0.083);
+          (joint.availablePorts || joint.ports).forEach(port => {
+            const delta = mul(portVector(port), 0.105);
+            cylinder(mesh, center, add(center, delta), 0.068, 12);
+          });
+          upload(mesh, [0.13, 0.16, 0.16], joint.id);
+        });
+        if (explosion === 0 && showAccessories) {
+          mesh = [];
+          box(mesh, [0.05, 0.05, 1.98], [0.95, 0.95, 2.025]);
+          upload(mesh, [0.98, 0.75, 0.13]);
+          mesh = [];
+          box(mesh, [0.05, 1.05, 2.98], [0.95, 1.95, 3.025]);
+          upload(mesh, [0.91, 0.14, 0.2]);
+          mesh = [];
+          box(mesh, [1.11, 0.11, 0.99], [2.89, 1.89, 1.01]);
+          upload(mesh, [0.22, 0.27, 0.31]);
+          mesh = [];
+          for (let i = 0; i <= 14; i++) {
+            const t = 0.16 + (i * 1.68) / 14;
+            for (const y of [0, 2]) {
+              const innerY = y === 0 ? 0.13 : 1.87;
+              loopTube(
+                mesh,
+                [
+                  [1 + t, y - 0.04, 1.01],
+                  [1 + t, y, 1.09],
+                  [1 + t, innerY, 1.03]
+                ],
+                0.012
+              );
+            }
+            for (const x of [1, 3]) {
+              const innerX = x === 1 ? 1.13 : 2.87;
+              loopTube(
+                mesh,
+                [
+                  [x - 0.04, t, 1.01],
+                  [x, t, 1.09],
+                  [innerX, t, 1.03]
+                ],
+                0.012
+              );
+            }
+          }
+          upload(mesh, [0.1, 0.13, 0.15]);
+          mesh = [];
+          for (const y of [0.85, 1.45]) {
+            box(mesh, [1.985, y - 0.018, 2.95], [2.015, y + 0.018, 4.065]);
+            const ringPoints = Array.from({ length: 37 }, (_, i) => [
+              2,
+              y + Math.cos((i / 36) * Math.PI * 2) * 0.155,
+              2.77 + Math.sin((i / 36) * Math.PI * 2) * 0.19
+            ]);
+            const ringMesh = [];
+            loopTube(ringMesh, ringPoints, 0.031);
+            upload(ringMesh, [0.98, 0.73, 0.14]);
+          }
+          upload(mesh, [0.86, 0.86, 0.79]);
+        }
+        if (pendingPipe) {
+          mesh = [];
+          const preview = displayedPipe(pendingPipe);
+          cylinder(mesh, preview.a, preview.b, 0.073, 14);
+          sphere(mesh, preview.b, 0.105);
+          upload(mesh, [0.2, 0.78, 0.86]);
+        }
+        requestRender();
+      }
+      let program, positionLocation, normalLocation, matrixLocation, colorLocation;
+      function shader(type, source) {
+        const result = gl.createShader(type);
+        gl.shaderSource(result, source);
+        gl.compileShader(result);
+        if (!gl.getShaderParameter(result, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(result));
+        return result;
+      }
+      function initializeGl() {
+        program = gl.createProgram();
+        gl.attachShader(
+          program,
+          shader(
+            gl.VERTEX_SHADER,
+            "attribute vec3 aPosition;attribute vec3 aNormal;uniform mat4 uMatrix;varying vec3 vNormal;void main(){gl_Position=uMatrix*vec4(aPosition,1.0);vNormal=aNormal;}"
+          )
+        );
+        gl.attachShader(
+          program,
+          shader(
+            gl.FRAGMENT_SHADER,
+            "precision mediump float;uniform vec3 uColor;varying vec3 vNormal;void main(){vec3 n=normalize(vNormal);float diffuse=max(dot(n,normalize(vec3(-0.6,-0.8,1.4))),0.0);float back=max(dot(n,normalize(vec3(0.9,0.4,0.3))),0.0);gl_FragColor=vec4(uColor*(0.57+0.39*diffuse+0.12*back),1.0);}"
+          )
+        );
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+        gl.useProgram(program);
+        positionLocation = gl.getAttribLocation(program, "aPosition");
+        normalLocation = gl.getAttribLocation(program, "aNormal");
+        matrixLocation = gl.getUniformLocation(program, "uMatrix");
+        colorLocation = gl.getUniformLocation(program, "uColor");
+        gl.enable(gl.DEPTH_TEST);
+        gl.clearColor(0.949, 0.949, 0.922, 1);
+        buildScene();
+      }
+      function cameraEye() {
+        return add(camera.target, [
+          camera.distance * Math.sin(camera.polar) * Math.cos(camera.azimuth),
+          camera.distance * Math.sin(camera.polar) * Math.sin(camera.azimuth),
+          camera.distance * Math.cos(camera.polar)
+        ]);
+      }
+      function render() {
+        renderPending = false;
+        if (!gl || gl.isContextLost()) return;
+        const ratio = Math.min(window.devicePixelRatio || 1, 2),
+          width = Math.round(canvas.clientWidth * ratio),
+          height = Math.round(canvas.clientHeight * ratio);
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        gl.viewport(0, 0, width, height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        projectionView = matrixMultiply(perspective(width / height), lookAt(cameraEye(), camera.target));
+        projectionScale = canvas.clientHeight / (2 * Math.tan((Math.PI * 39) / 360));
+        gl.uniformMatrix4fv(matrixLocation, false, projectionView);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.enableVertexAttribArray(normalLocation);
+        objects.forEach(object => {
+          gl.bindBuffer(gl.ARRAY_BUFFER, object.buffer);
+          gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 24, 0);
+          gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 24, 12);
+          gl.uniform3fv(colorLocation, object.id && object.id === selectedId ? [1, 0.5, 0.1] : object.color);
+          gl.drawArrays(gl.TRIANGLES, 0, object.count);
+        });
+      }
+      function requestRender() {
+        if (!renderPending) {
+          renderPending = true;
+          requestAnimationFrame(render);
+        }
+      }
+      function zoom(factor) {
+        camera.distance = Math.min(80, Math.max(3, camera.distance * factor));
+        requestRender();
+      }
+      function setView(view) {
+        camera.target = [1.5, 1, 1.8];
+        camera.distance = canvas.clientWidth < 600 ? 11 : 8.6;
+        camera.azimuth = view === "front" ? -Math.PI / 2 : view === "side" ? 0 : -1.03;
+        camera.polar = view === "top" ? 0.025 : view === "perspective" ? 1.11 : Math.PI / 2;
+        document
+          .querySelectorAll("[data-view]")
+          .forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === view)));
+        requestRender();
+      }
+      function pan(dx, dy) {
+        const eye = cameraEye(),
+          forward = normalize(sub(eye, camera.target)),
+          right = normalize(cross([0, 0, 1], forward)),
+          up = cross(forward, right),
+          scale = camera.distance / projectionScale;
+        camera.target = add(camera.target, add(mul(right, -dx * scale), mul(up, dy * scale)));
+        requestRender();
+      }
+      function project(p) {
+        const q = [...p, 1],
+          out = [0, 0, 0, 0];
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) out[r] += projectionView[c * 4 + r] * q[c];
+        return [
+          ((out[0] / out[3]) * 0.5 + 0.5) * canvas.clientWidth,
+          ((-out[1] / out[3]) * 0.5 + 0.5) * canvas.clientHeight,
+          out[3]
+        ];
+      }
+      function selectPart(id) {
+        cancelPreview();
+        selectedId = id;
+        $("part-select").value = id;
+        const part = partsById.get(id);
+        $("detail").innerHTML = !part
+          ? ""
+          : part.p
+          ? `<strong>${part.id} · ${part.type}</strong>端口 ${part.ports.join(" / ")}<br>连接 ${part.pipes.join("、")}`
+          : `<strong>${part.id} · ${pipeLength(part)}cm管</strong>${part.group}<br>${part.start} ↔ ${part.end}`;
+        refreshSelection();
+        requestRender();
+      }
+      function pick(clientX, clientY, pointerType = "mouse") {
+        const rect = canvas.getBoundingClientRect();
+        const mouse = [clientX - rect.left, clientY - rect.top];
+        const isTouch = pointerType === "touch";
+        const jointHits = [];
+        // 接头先于相邻管子命中；缩放时按投影尺寸同步扩大点击区域。
+        for (const joint of model.joints) {
+          const center = project(expandedPoint(joint.p));
+          if (center[2] <= 0) continue;
+          const radius = Math.max(isTouch ? 26 : 18, Math.min(isTouch ? 48 : 40, (0.17 * projectionScale) / center[2] + 6));
+          const distance = Math.hypot(mouse[0] - center[0], mouse[1] - center[1]);
+          if (distance <= radius) jointHits.push({ id: joint.id, distance, depth: center[2] });
+        }
+        if (jointHits.length) {
+          const closest = Math.min(...jointHits.map(hit => hit.distance));
+          const candidates = jointHits.filter(hit => hit.distance <= closest + 4);
+          candidates.sort((a, b) => a.depth - b.depth || a.distance - b.distance);
+          selectPart(candidates[0].id);
+          return;
+        }
+        let best = null;
+        for (const pipe of model.pipes) {
+          const displayed = displayedPipe(pipe),
+            a = project(displayed.a),
+            b = project(displayed.b);
+          if (a[2] <= 0 || b[2] <= 0) continue;
+          const dx = b[0] - a[0],
+            dy = b[1] - a[1],
+            length = dx * dx + dy * dy;
+          const t = length ? Math.max(0, Math.min(1, ((mouse[0] - a[0]) * dx + (mouse[1] - a[1]) * dy) / length)) : 0;
+          const distance = Math.hypot(mouse[0] - a[0] - dx * t, mouse[1] - a[1] - dy * t),
+            depth = a[2] + (b[2] - a[2]) * t;
+          const radius = Math.max(isTouch ? 13 : 8, Math.min(24, (0.059 * projectionScale) / depth + 4));
+          if (distance <= radius && (!best || depth < best.depth)) best = { id: pipe.id, depth };
+        }
+        selectPart(best ? best.id : "");
+      }
+      const pointers = new Map();
+      let gestureStart = null;
+      let moved = false;
+      let hadMultiPointer = false;
+      canvas.addEventListener("pointerdown", event => {
+        canvas.setPointerCapture(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        gestureStart = { x: event.clientX, y: event.clientY };
+        moved = false;
+        if (pointers.size > 1) {
+          hadMultiPointer = true;
+          moved = true;
+        }
+        canvas.classList.add("dragging");
+      });
+      canvas.addEventListener("pointermove", event => {
+        if (!pointers.has(event.pointerId)) return;
+        const previous = pointers.get(event.pointerId);
+        const before = [...pointers.values()];
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const after = [...pointers.values()];
+        if (
+          gestureStart &&
+          Math.hypot(event.clientX - gestureStart.x, event.clientY - gestureStart.y) > (event.pointerType === "touch" ? 9 : 5)
+        )
+          moved = true;
+        if (pointers.size === 2) {
+          const distance = points => Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+          const previousDistance = distance(before),
+            nextDistance = distance(after);
+          if (previousDistance > 0 && nextDistance > 0) zoom(previousDistance / nextDistance);
+          pan(
+            (after[0].x + after[1].x - before[0].x - before[1].x) / 2,
+            (after[0].y + after[1].y - before[0].y - before[1].y) / 2
+          );
+        } else if (pointers.size === 1) {
+          if (!moved) return;
+          const dx = event.clientX - previous.x,
+            dy = event.clientY - previous.y;
+          if (event.buttons === 2 || event.shiftKey) pan(dx, dy);
+          else {
+            camera.azimuth -= dx * 0.008;
+            camera.polar = Math.max(0.03, Math.min(Math.PI - 0.08, camera.polar - dy * 0.006));
+            requestRender();
+          }
+        }
+      });
+      function releasePointer(event) {
+        if (event.type === "pointerup" && !moved && !hadMultiPointer && event.button === 0)
+          pick(event.clientX, event.clientY, event.pointerType);
+        pointers.delete(event.pointerId);
+        if (pointers.size === 0) {
+          canvas.classList.remove("dragging");
+          hadMultiPointer = false;
+          gestureStart = null;
+        }
+      }
+      canvas.addEventListener("pointerup", releasePointer);
+      canvas.addEventListener("pointercancel", releasePointer);
+      canvas.addEventListener("lostpointercapture", event => {
+        pointers.delete(event.pointerId);
+        if (!pointers.size) canvas.classList.remove("dragging");
+      });
+      canvas.addEventListener("contextmenu", event => event.preventDefault());
+      canvas.addEventListener(
+        "wheel",
+        event => {
+          event.preventDefault();
+          zoom(Math.exp(event.deltaY * 0.001));
+        },
+        { passive: false }
+      );
+      canvas.addEventListener("keydown", event => {
+        let handled = true;
+        if (event.key === "+" || event.key === "=") zoom(0.85);
+        else if (event.key === "-") zoom(1 / 0.85);
+        else if (event.key === "0") setView("perspective");
+        else if (event.key === "ArrowLeft") camera.azimuth -= 0.1;
+        else if (event.key === "ArrowRight") camera.azimuth += 0.1;
+        else if (event.key === "ArrowUp") camera.polar = Math.max(0.03, camera.polar - 0.1);
+        else if (event.key === "ArrowDown") camera.polar = Math.min(Math.PI - 0.08, camera.polar + 0.1);
+        else handled = false;
+        if (handled) {
+          event.preventDefault();
+          requestRender();
+        }
+      });
+      $("zoom-in").addEventListener("click", () => zoom(0.8));
+      $("zoom-out").addEventListener("click", () => zoom(1.25));
+      $("reset").addEventListener("click", () => {
+        explosion = 0;
+        $("explode").value = "0";
+        $("explode-label").textContent = "1.0×";
+        selectPart("");
+        buildScene();
+        setView("perspective");
+      });
+      document
+        .querySelectorAll("[data-view]")
+        .forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+      $("explode").addEventListener("input", () => {
+        explosion = Number($("explode").value) / 100;
+        $("explode-label").textContent = `${(1 + explosion).toFixed(1)}×`;
+        buildScene();
+      });
+      $("parts-toggle").addEventListener("click", () => {
+        const open = $("parts-panel").hidden;
+        $("parts-panel").hidden = !open;
+        $("parts-toggle").setAttribute("aria-expanded", String(open));
+      });
+      $("part-select").addEventListener("change", event => selectPart(event.target.value));
+      $("counts").textContent = `${model.pipes.length}根管 · ${model.joints.length}个接头`;
+      for (const part of [...model.pipes, ...model.joints])
+        $("part-select").add(new Option(`${part.id} · ${part.type || part.group}`, part.id));
+      $("joint-counts").innerHTML = Object.entries(model.counts)
+        .map(([type, count]) => `<tr><td>${type}</td><td>${count}个</td></tr>`)
+        .join("");
+      $("download").addEventListener("click", () => {
+        const rows = [
+          [
+            "类别",
+            "编号",
+            "用途或形状",
+            "标称长度cm",
+            "起点接头",
+            "终点接头",
+            "起点或节点坐标（cm）",
+            "终点坐标（cm）",
+            "已用端口",
+            "相接管号"
+          ],
+          ...model.pipes.map(p => [
+            "管子",
+            p.id,
+            p.group,
+            pipeLength(p),
+            p.start,
+            p.end,
+            cmPosition(p.a).join("/"),
+            cmPosition(p.b).join("/"),
+            "",
+            ""
+          ]),
+          ...model.joints.map(j => [
+            "接头",
+            j.id,
+            j.type,
+            "",
+            "",
+            "",
+            cmPosition(j.p).join("/"),
+            "",
+            j.ports.join(" "),
+            j.pipes.join(" ")
+          ])
+        ];
+        const csv =
+          "\uFEFF" + rows.map(row => row.map(value => '"' + String(value).replaceAll('"', '""') + '"').join(",")).join("\r\n");
+        const link = document.createElement("a"),
+          url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        link.href = url;
+        link.download = "蹦床吊环-逐件配件清单.csv";
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+      canvas.addEventListener("webglcontextlost", event => {
+        event.preventDefault();
+        $("error").hidden = false;
+      });
+      canvas.addEventListener("webglcontextrestored", () => {
+        $("error").hidden = true;
+        objects = [];
+        initializeGl();
+      });
+      const referencePipes = JSON.parse(JSON.stringify(model.pipes));
+      const jointCatalog = [
+        {
+          name: "一字接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0]
+          ]
+        },
+        {
+          name: "转角接头",
+          vectors: [
+            [1, 0, 0],
+            [0, 1, 0]
+          ]
+        },
+        {
+          name: "45接头",
+          vectors: [
+            [1, 0, 0],
+            [-Math.SQRT1_2, Math.SQRT1_2, 0]
+          ]
+        },
+        {
+          name: "T形接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0],
+            [0, 1, 0]
+          ]
+        },
+        {
+          name: "三向接头",
+          vectors: [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+          ]
+        },
+        {
+          name: "十字接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, -1, 0]
+          ]
+        },
+        {
+          name: "四向接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+          ]
+        },
+        {
+          name: "五向接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, -1, 0],
+            [0, 0, 1]
+          ]
+        },
+        {
+          name: "六向接头",
+          vectors: [
+            [1, 0, 0],
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, -1, 0],
+            [0, 0, 1],
+            [0, 0, -1]
+          ]
+        }
+      ];
+      const directions = [];
+      for (let x = -1; x <= 1; x++)
+        for (let y = -1; y <= 1; y++)
+          for (let z = -1; z <= 1; z++) {
+            if ([x, y, z].filter(Boolean).length > 0 && [x, y, z].filter(Boolean).length <= 2) {
+              const values = [x, y, z];
+              directions.push({
+                key: values.map((v, i) => (v ? (v > 0 ? "+" : "-") + "XYZ"[i] : "")).join(""),
+                vector: normalize(values)
+              });
+            }
+          }
+      directions.sort((a, b) => a.key.length - b.key.length || a.key.localeCompare(b.key));
+      const directionName = key =>
+        key
+          .replaceAll("+X", "右")
+          .replaceAll("-X", "左")
+          .replaceAll("+Y", "后")
+          .replaceAll("-Y", "前")
+          .replaceAll("+Z", "上")
+          .replaceAll("-Z", "下");
+      const portVector = key => directions.find(direction => direction.key === key).vector;
+      const vectorPort = vector => directions.find(direction => dot(vector, direction.vector) > 0.999999)?.key;
+      const cmPosition = p => p.map(value => Math.round(value * 35 * 100000) / 100000);
+      const positionKey = p =>
+        cmPosition(p)
+          .map(value => value.toFixed(4))
+          .join(",");
+      const pipeLength = pipe => Math.round(Math.hypot(...sub(pipe.b, pipe.a)) * 35);
+      const orientations = [];
+      for (const first of directions)
+        for (const second of directions)
+          if (Math.abs(dot(first.vector, second.vector)) < 0.00001) {
+            orientations.push([first.vector, second.vector, cross(first.vector, second.vector)]);
+          }
+      const orientedCatalog = jointCatalog.map(type => ({
+        ...type,
+        orientations: orientations
+          .map(basis => type.vectors.map(v => add(add(mul(basis[0], v[0]), mul(basis[1], v[1])), mul(basis[2], v[2]))))
+          .filter(ports => ports.every(vectorPort))
+      }));
+      let connectorChoices = {};
+      let undoHistory = [];
+      let redoHistory = [];
+      let showAccessories = true;
+      let isEditing = false;
+      $("edit-fields").hidden = true;
+      $("parts-panel").hidden = true;
+      $("edit-toggle").setAttribute("aria-pressed", "false");
+      $("parts-toggle").setAttribute("aria-expanded", "false");
+      function snapshot() {
+        return JSON.parse(JSON.stringify({ pipes: model.pipes, connectors: connectorChoices, showAccessories }));
+      }
+      function findConnector(ports, requested) {
+        const vectors = ports.map(portVector);
+        const requestedType = typeof requested === "string" ? requested : requested?.type;
+        const requestedPorts = typeof requested === "object" ? requested?.ports : null;
+        for (const type of orientedCatalog) {
+          if (requestedType && requestedType !== type.name) continue;
+          for (const orientation of type.orientations) {
+            if (requestedPorts && orientation.map(vectorPort).sort().join("|") !== [...requestedPorts].sort().join("|")) continue;
+            if (vectors.every(vector => orientation.some(candidate => dot(vector, candidate) > 0.999999)))
+              return { type: type.name, ports: orientation.map(vectorPort) };
+          }
+        }
+        return null;
+      }
+      function validateSegmentPair(first, second) {
+        const u = sub(first.b, first.a),
+          v = sub(second.b, second.a),
+          w = sub(first.a, second.a);
+        const aa = dot(u, u),
+          bb = dot(u, v),
+          cc = dot(v, v),
+          dd = dot(u, w),
+          ee = dot(v, w),
+          denominator = aa * cc - bb * bb;
+        if (Math.hypot(...cross(u, v)) < 0.000001 && Math.hypot(...cross(w, u)) < 0.000001) {
+          const t1 = dot(sub(second.a, first.a), u) / aa,
+            t2 = dot(sub(second.b, first.a), u) / aa;
+          if (Math.min(1, Math.max(t1, t2)) - Math.max(0, Math.min(t1, t2)) > 0.000001)
+            throw new Error(`${first.id}与${second.id}重叠，请换方向或删除原管。`);
+        }
+        const candidates = [];
+        const clamp = value => Math.max(0, Math.min(1, value));
+        for (const t of [0, 1]) {
+          const point = add(first.a, mul(u, t));
+          candidates.push([t, clamp(dot(sub(point, second.a), v) / cc)]);
+        }
+        for (const t of [0, 1]) {
+          const point = add(second.a, mul(v, t));
+          candidates.push([clamp(dot(sub(point, first.a), u) / aa), t]);
+        }
+        if (Math.abs(denominator) > 0.000001) {
+          const a = (bb * ee - cc * dd) / denominator,
+            b = (aa * ee - bb * dd) / denominator;
+          if (a >= 0 && a <= 1 && b >= 0 && b <= 1) candidates.push([a, b]);
+        }
+        for (const [a, b] of candidates) {
+          if (Math.hypot(...sub(add(first.a, mul(u, a)), add(second.a, mul(v, b)))) < 0.000001) {
+            const atEnds = (a < 0.000001 || a > 0.999999) && (b < 0.000001 || b > 0.999999);
+            if (!atEnds) throw new Error(`${first.id}与${second.id}在管身相交，必须改用端点连接。`);
+          }
+        }
+      }
+      function constructModel(pipes, choices = {}) {
+        if (!Array.isArray(pipes) || pipes.length > 500) throw new Error("方案最多支持500根管。");
+        const clean = [],
+          seen = new Set();
+        for (const pipe of pipes) {
+          if (!pipe || !/^P\d{3,6}$/.test(pipe.id) || seen.has(pipe.id)) throw new Error("管子编号无效或重复。");
+          seen.add(pipe.id);
+          for (const p of [pipe.a, pipe.b])
+            if (
+              !Array.isArray(p) ||
+              p.length !== 3 ||
+              p.some(v => typeof v !== "number" || !Number.isFinite(v) || Math.abs(v) > 20)
+            )
+              throw new Error("坐标须为有限数字，范围在原点前后700cm内。");
+          const length = Math.hypot(...sub(pipe.b, pipe.a)) * 35;
+          if (![15, 35].some(value => Math.abs(value - length) < 0.001)) throw new Error("只支持15cm或35cm管。");
+          if (!vectorPort(normalize(sub(pipe.b, pipe.a)))) throw new Error("只支持轴向或45°斜向管。");
+          clean.push({
+            id: pipe.id,
+            a: [...pipe.a],
+            b: [...pipe.b],
+            group: typeof pipe.group === "string" && /^[\u4e00-\u9fa5]{1,12}$/.test(pipe.group) ? pipe.group : "自定义"
+          });
+        }
+        for (let a = 0; a < clean.length; a++) for (let b = a + 1; b < clean.length; b++) validateSegmentPair(clean[a], clean[b]);
+        const existing = new Map(model.joints.map(j => [positionKey(j.p), j.id]));
+        let nextJoint = Math.max(0, ...model.joints.map(j => Number(j.id.slice(1)))) + 1;
+        const jointsByKey = new Map();
+        for (const pipe of clean)
+          for (const [point, other, field] of [
+            [pipe.a, pipe.b, "start"],
+            [pipe.b, pipe.a, "end"]
+          ]) {
+            const key = positionKey(point);
+            if (!jointsByKey.has(key))
+              jointsByKey.set(key, {
+                id: existing.get(key) || "J" + String(nextJoint++).padStart(3, "0"),
+                p: [...point],
+                ports: [],
+                pipes: []
+              });
+            const joint = jointsByKey.get(key),
+              port = vectorPort(normalize(sub(other, point)));
+            if (joint.ports.includes(port)) throw new Error("同一个端口不能插入两根管。");
+            joint.ports.push(port);
+            joint.pipes.push(pipe.id);
+            pipe[field] = joint.id;
+          }
+        const counts = {};
+        for (const [key, joint] of jointsByKey) {
+          const match = findConnector(joint.ports, choices[key]);
+          if (!match) throw new Error(`${joint.id}的方向无法匹配${choices[key] || "现有接头"}，请更改方向或设为自动匹配。`);
+          joint.type = match.type;
+          joint.availablePorts = match.ports;
+          counts[joint.type] = (counts[joint.type] || 0) + 1;
+        }
+        return { pipes: clean, joints: [...jointsByKey.values()], counts };
+      }
+      function report(message, isError = false) {
+        $("edit-status").textContent = message;
+        $("edit-status").style.color = isError ? "#a53626" : "#28654e";
+      }
+      function refreshEditor() {
+        $("counts").textContent = `${model.pipes.length}根管 · ${model.joints.length}个接头`;
+        $("length-counts").textContent = `35cm：${model.pipes.filter(p => pipeLength(p) === 35).length}根　15cm：${
+          model.pipes.filter(p => pipeLength(p) === 15).length
+        }根`;
+        $("part-select").replaceChildren(new Option("整体模型", ""));
+        for (const part of [...model.pipes, ...model.joints])
+          $("part-select").add(new Option(`${part.id} · ${part.type || pipeLength(part) + "cm " + part.group}`, part.id));
+        $("part-select").value = partsById.has(selectedId) ? selectedId : "";
+        $("joint-counts").innerHTML = Object.entries(model.counts)
+          .map(([type, count]) => `<tr><td>${type}</td><td>${count}个</td></tr>`)
+          .join("");
+        $("undo").disabled = !undoHistory.length;
+        $("redo").disabled = !redoHistory.length;
+        $("accessories").checked = showAccessories;
+        refreshSelection();
+      }
+      function refreshSelection() {
+        $("focus-part").disabled = !partsById.has(selectedId);
+        const part = partsById.get(selectedId);
+        const isPipe = !!part && !part.p;
+        $("resize-fields").hidden = !isPipe;
+        $("joint-fields").hidden = !part?.p;
+        $("delete-part").disabled = !part;
+        $("add-pipe").disabled = !part && model.pipes.length > 0;
+        $("add-pipe").textContent = model.pipes.length ? "预览新管" : "预览第一根管";
+        if (isPipe) $("resize-length").value = String(pipeLength(part));
+        if (part?.p) {
+          const choice = connectorChoices[positionKey(part.p)];
+          $("connector-model").value = typeof choice === "string" ? choice : choice?.type || "自动";
+          refreshConnectorOrientation(part);
+        }
+        $("anchor-row").hidden = !isPipe;
+        $("add-anchor-row").hidden = !isPipe;
+        syncChoices();
+        $("edit-selected").textContent = part
+          ? part.p
+            ? `${part.id} · ${part.type} · 坐标 ${cmPosition(part.p).join(" / ")} cm`
+            : `${part.id} · ${pipeLength(part)}cm · ${part.start} → ${part.end}`
+          : "先点击模型或在上方选择一个部件。";
+      }
+      function applyState(state, selection = "") {
+        const candidate = constructModel(state.pipes, state.connectors || {});
+        model = candidate;
+        connectorChoices = {};
+        for (const j of model.joints) {
+          const key = positionKey(j.p);
+          if (state.connectors?.[key]) connectorChoices[key] = state.connectors[key];
+        }
+        showAccessories = state.showAccessories === true;
+        partsById.clear();
+        for (const part of [...model.pipes, ...model.joints]) partsById.set(part.id, part);
+        selectedId = partsById.has(selection) ? selection : "";
+        refreshEditor();
+        selectPart(selectedId);
+        if (gl) buildScene();
+      }
+      function commit(pipes, choices = connectorChoices, selection = "", accessories = showAccessories) {
+        const before = snapshot();
+        constructModel(pipes, choices);
+        applyState({ pipes, connectors: choices, showAccessories: accessories }, selection);
+        undoHistory.push(before);
+        if (undoHistory.length > 50) undoHistory.shift();
+        redoHistory = [];
+        refreshEditor();
+        saveLocalDraft();
+      }
+      function safely(action) {
+        try {
+          action();
+        } catch (error) {
+          report(error.message, true);
+        }
+      }
+      function selectedAnchor() {
+        const part = partsById.get(selectedId);
+        if (!part) {
+          if (!model.pipes.length) return [0, 0, 0];
+          throw new Error("先选择一个接头或管子。");
+        }
+        return part.p || ($("anchor").value === "start" ? part.a : part.b);
+      }
+      function nextPipeId() {
+        return "P" + String(Math.max(0, ...model.pipes.map(p => Number(p.id.slice(1)))) + 1).padStart(3, "0");
+      }
+      function fitModel() {
+        if (!model.joints.length) {
+          setView("perspective");
+          return;
+        }
+        const min = [0, 1, 2].map(i => Math.min(...model.joints.map(j => expandedPoint(j.p)[i]))),
+          max = [0, 1, 2].map(i => Math.max(...model.joints.map(j => expandedPoint(j.p)[i])));
+        camera.target = min.map((value, i) => (value + max[i]) / 2);
+        const radius = Math.hypot(...sub(max, min)) / 2;
+        const aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.distance = Math.max(
+          3,
+          Math.min(80, (radius / Math.sin(Math.atan(Math.tan((Math.PI * 39) / 360) * Math.min(1, aspect)))) * 1.2)
+        );
+        requestRender();
+      }
+      function downloadFile(name, content, type) {
+        const url = URL.createObjectURL(new Blob([content], { type })),
+          link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+      function serializedDesign() {
+        return {
+          version: 1,
+          units: "cm",
+          pipes: model.pipes.map(p => ({ id: p.id, a: cmPosition(p.a), b: cmPosition(p.b), group: p.group })),
+          connectors: connectorChoices,
+          showAccessories
+        };
+      }
+      function parseDesign(value) {
+        if (!value || value.version !== 1 || value.units !== "cm" || !Array.isArray(value.pipes) || value.pipes.length > 500)
+          throw new Error("文件不是支持的方案格式。");
+        if (
+          value.connectors !== undefined &&
+          (!value.connectors || typeof value.connectors !== "object" || Array.isArray(value.connectors))
+        )
+          throw new Error("接头设置格式错误。");
+        const choices = {};
+        for (const [key, type] of Object.entries(value.connectors || {})) {
+          const name = typeof type === "string" ? type : type?.type;
+          if (!/^-?\d+\.\d{4},-?\d+\.\d{4},-?\d+\.\d{4}$/.test(key) || !jointCatalog.some(j => j.name === name))
+            throw new Error("接头设置含无效型号或坐标。");
+          if (typeof type !== "string") {
+            if (
+              !type ||
+              !Array.isArray(type.ports) ||
+              type.ports.length !== jointCatalog.find(j => j.name === name).vectors.length ||
+              new Set(type.ports).size !== type.ports.length ||
+              !type.ports.every(port => directions.some(d => d.key === port))
+            )
+              throw new Error("接头朝向数据无效。");
+            choices[key] = { type: name, ports: [...type.ports] };
+          } else choices[key] = type;
+        }
+        const pipes = value.pipes.map(p => {
+          if (
+            !p ||
+            !Array.isArray(p.a) ||
+            !Array.isArray(p.b) ||
+            p.a.some(v => typeof v !== "number") ||
+            p.b.some(v => typeof v !== "number")
+          )
+            throw new Error("管子坐标格式错误。");
+          return { id: p.id, a: p.a.map(v => v / 35), b: p.b.map(v => v / 35), group: p.group };
+        });
+        constructModel(pipes, choices);
+        return { pipes, connectors: choices, showAccessories: value.showAccessories === true };
+      }
+      $("edit-toggle").addEventListener("click", () => {
+        isEditing = !isEditing;
+        $("edit-fields").hidden = !isEditing;
+        $("edit-toggle").setAttribute("aria-pressed", String(isEditing));
+        if (isEditing) {
+          $("parts-panel").hidden = false;
+          $("parts-toggle").setAttribute("aria-expanded", "true");
+        }
+        refreshSelection();
+      });
+      for (const direction of directions)
+        $("direction").add(
+          new Option(`${directionName(direction.key)}${direction.key.length > 2 ? " ↗45°" : ""}`, direction.key)
+        );
+      $("direction").value = "+Z";
+      for (const type of jointCatalog) $("connector-model").add(new Option(type.name, type.name));
+      $("add-pipe").addEventListener("click", () =>
+        safely(() => {
+          const a = [...selectedAnchor()];
+          const b = add(a, mul(portVector($("direction").value), Number($("new-length").value) / 35));
+          const nearby = model.joints.find(j => Math.hypot(...sub(j.p, b)) < 0.000003);
+          const candidate = { id: nextPipeId(), a, b: nearby ? [...nearby.p] : b, group: "自定义" };
+          constructModel([...model.pipes, candidate], connectorChoices);
+          pendingPipe = candidate;
+          $("preview-actions").hidden = false;
+          $("add-pipe").hidden = true;
+          report("蓝色管为预览，确认后才会加入方案。");
+          if (gl) buildScene();
+        })
+      );
+      $("resize-pipe").addEventListener("click", () =>
+        safely(() => {
+          const pipe = partsById.get(selectedId);
+          if (!pipe || pipe.p) throw new Error("先选择一根管。");
+          const length = Number($("resize-length").value);
+          if (length === pipeLength(pipe)) {
+            report("长度未改变。");
+            return;
+          }
+          const anchor = $("anchor").value === "start" ? "a" : "b",
+            moving = anchor === "a" ? "b" : "a",
+            replacement = { ...pipe };
+          replacement[moving] = add(pipe[anchor], mul(normalize(sub(pipe[moving], pipe[anchor])), length / 35));
+          const nearby = model.joints.find(j => Math.hypot(...sub(j.p, replacement[moving])) < 0.000003);
+          if (nearby) replacement[moving] = [...nearby.p];
+          commit(
+            model.pipes.map(p => (p.id === pipe.id ? replacement : p)),
+            connectorChoices,
+            pipe.id
+          );
+          report("长度已改变；原活动端已断开，其他管子保持原位。");
+        })
+      );
+      $("delete-part").addEventListener("click", () =>
+        safely(() => {
+          const part = partsById.get(selectedId);
+          if (!part) return;
+          const ids = part.p ? part.pipes : [part.id];
+          if (part.p && !confirm(`删除${part.id}及相接的${ids.length}根管？`)) return;
+          commit(model.pipes.filter(p => !ids.includes(p.id)));
+          report("已删除，可撤销。");
+        })
+      );
+      $("connector-model").addEventListener("change", () =>
+        safely(() => {
+          const part = partsById.get(selectedId);
+          if (!part?.p) return;
+          const choices = { ...connectorChoices };
+          if ($("connector-model").value === "自动") delete choices[positionKey(part.p)];
+          else choices[positionKey(part.p)] = $("connector-model").value;
+          try {
+            commit(model.pipes, choices, part.id, showAccessories);
+            report("接头型号已更新。");
+          } finally {
+            refreshSelection();
+          }
+        })
+      );
+      $("undo").addEventListener("click", () =>
+        safely(() => {
+          if (!undoHistory.length) return;
+          const previous = undoHistory.pop();
+          redoHistory.push(snapshot());
+          applyState(previous);
+          saveLocalDraft();
+          report("已撤销。");
+        })
+      );
+      $("redo").addEventListener("click", () =>
+        safely(() => {
+          if (!redoHistory.length) return;
+          const next = redoHistory.pop();
+          undoHistory.push(snapshot());
+          applyState(next);
+          saveLocalDraft();
+          report("已重做。");
+        })
+      );
+      $("new-design").addEventListener("click", () =>
+        safely(() => {
+          if (model.pipes.length && !confirm("新建空白方案？当前编辑可撤销，也可先导出保存。")) return;
+          commit([], {}, "", false);
+          report("选择长度和方向，从原点添加第一根管。");
+        })
+      );
+      $("restore-reference").addEventListener("click", () =>
+        safely(() => {
+          if (!confirm("恢复参考图？当前编辑可撤销，也可先导出保存。")) return;
+          commit(referencePipes, {}, "", true);
+          setView("perspective");
+          report("已恢复参考模型。");
+        })
+      );
+      $("roof-example").addEventListener("click", () =>
+        safely(() => {
+          if (model.pipes.length && !confirm("载入独立屋顶示例？当前方案可撤销。")) return;
+          const s = Math.SQRT1_2;
+          const pipes = [
+            { id: "P001", a: [0, 0, 0], b: [0, 0, 1], group: "屋顶示例" },
+            { id: "P002", a: [0, 0, 1], b: [s, 0, 1 + s], group: "屋顶示例" },
+            { id: "P003", a: [s, 0, 1 + s], b: [2 * s, 0, 1], group: "屋顶示例" },
+            { id: "P004", a: [2 * s, 0, 1], b: [2 * s, 0, 0], group: "屋顶示例" }
+          ];
+          commit(pipes, {}, "", false);
+          fitModel();
+          report("两侧45接头、顶部转角接头。此为接法演示，不是独立承重架。");
+        })
+      );
+      $("accessories").addEventListener("change", () => {
+        showAccessories = $("accessories").checked;
+        saveLocalDraft();
+        if (gl) buildScene();
+      });
+      $("fit-model").addEventListener("click", fitModel);
+      $("fit-all").addEventListener("click", fitModel);
+      $("save-design").addEventListener("click", () => {
+        downloadFile("我的攀爬架方案.json", JSON.stringify(serializedDesign(), null, 2), "application/json");
+        report("方案已导出，可在其他设备导入继续编辑。");
+      });
+      $("import-design").addEventListener("click", () => $("design-file").click());
+      $("design-file").addEventListener("change", async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          if (file.size > 1024 * 1024) throw new Error("方案文件不能超过1MB。");
+          const state = parseDesign(JSON.parse(await file.text()));
+          commit(state.pipes, state.connectors, "", state.showAccessories);
+          fitModel();
+          report("方案导入成功。");
+        } catch (error) {
+          report("导入失败：" + error.message, true);
+        } finally {
+          event.target.value = "";
+        }
+      });
+      $("export-html").addEventListener("click", () => {
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelector("#saved-design").textContent = JSON.stringify(serializedDesign()).replaceAll("<", "\\u003c");
+        downloadFile("我的攀爬架编辑器.html", "<!doctype html>\r\n" + clone.outerHTML, "text/html;charset=utf-8");
+        report("已导出包含当前方案的完整HTML，可离线编辑。");
+      });
+
+      function cancelPreview() {
+        if (!pendingPipe) return;
+        pendingPipe = null;
+        report("");
+        $("preview-actions").hidden = true;
+        $("add-pipe").hidden = false;
+        if (gl) buildScene();
+      }
+      function switchEditorTab(tab) {
+        cancelPreview();
+        for (const name of ["adjust", "add", "files"]) {
+          $(name + "-section").hidden = name !== tab;
+          $("tab-" + name).setAttribute("aria-pressed", String(name === tab));
+        }
+      }
+      for (const name of ["adjust", "add", "files"]) $("tab-" + name).addEventListener("click", () => switchEditorTab(name));
+      $("confirm-add").addEventListener("click", () =>
+        safely(() => {
+          if (!pendingPipe) return;
+          const pipe = pendingPipe;
+          commit([...model.pipes, pipe], connectorChoices, pipe.id);
+          $("anchor").value = "end";
+          report("已添加。继续选方向可从这根管的末端接下一根。");
+        })
+      );
+      $("cancel-add").addEventListener("click", () => {
+        cancelPreview();
+        report("已取消预览，方案未改变。");
+      });
+      for (const id of ["direction", "new-length", "anchor"]) $(id).addEventListener("change", cancelPreview);
+      $("focus-part").addEventListener("click", () => {
+        const part = partsById.get(selectedId);
+        if (!part) return;
+        camera.target = part.p ? expandedPoint(part.p) : expandedPoint(mul(add(part.a, part.b), 0.5));
+        camera.distance = 4;
+        requestRender();
+      });
+      $("quick-save").addEventListener("click", () => $("export-html").click());
+      $("close-panel").addEventListener("click", () => {
+        $("parts-panel").hidden = true;
+        $("parts-toggle").setAttribute("aria-expanded", "false");
+      });
+      for (const value of ["35", "15"]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = value + "cm";
+        button.dataset.length = value;
+        button.setAttribute("aria-pressed", String($("new-length").value === value));
+        button.addEventListener("click", () => {
+          $("new-length").value = value;
+          $("new-length").dispatchEvent(new Event("change"));
+          syncChoices();
+        });
+        $("length-buttons").appendChild(button);
+      }
+      for (const key of ["+Z", "-Z", "-X", "+X", "-Y", "+Y"]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = directionName(key);
+        button.dataset.direction = key;
+        button.addEventListener("click", () => {
+          $("direction").value = key;
+          $("direction").dispatchEvent(new Event("change"));
+          syncChoices();
+        });
+        $("direction-buttons").appendChild(button);
+      }
+      for (const button of document.querySelectorAll("[data-anchor]"))
+        button.addEventListener("click", () => {
+          $("anchor").value = button.dataset.anchor;
+          $("anchor").dispatchEvent(new Event("change"));
+          syncChoices();
+        });
+      function syncChoices() {
+        document
+          .querySelectorAll("[data-anchor]")
+          .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.anchor === $("anchor").value)));
+        document
+          .querySelectorAll("[data-length]")
+          .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.length === $("new-length").value)));
+        document
+          .querySelectorAll("[data-direction]")
+          .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.direction === $("direction").value)));
+      }
+      for (const id of ["direction", "new-length"]) $(id).addEventListener("change", syncChoices);
+      syncChoices();
+
+      function refreshConnectorOrientation(joint) {
+        const select = $("connector-orientation");
+        select.replaceChildren();
+        const catalog = orientedCatalog.find(type => type.name === joint.type),
+          seen = new Set();
+        for (const orientation of catalog.orientations) {
+          const ports = orientation.map(vectorPort).sort();
+          if (!joint.ports.every(port => ports.includes(port))) continue;
+          const key = ports.join("|");
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const spare = ports.filter(port => !joint.ports.includes(port));
+          select.add(
+            new Option(
+              spare.length
+                ? "空闲接口朝向：" + spare.map(directionName).join("、")
+                : "已接管方向：" + ports.map(directionName).join("、"),
+              key
+            )
+          );
+        }
+        select.value = [...joint.availablePorts].sort().join("|");
+        select.disabled = select.options.length < 2;
+        $("orientation-help").textContent =
+          select.options.length < 2
+            ? "现有管子已限定朝向。要改变已接管方向，需先调整或删除相连管子。"
+            : "可切换空闲接口的方向，已连接的管子保持原位。方向以模型坐标为准，不随视角改变。";
+      }
+      $("connector-orientation").addEventListener("change", () =>
+        safely(() => {
+          const joint = partsById.get(selectedId);
+          if (!joint?.p) return;
+          const choice = { type: joint.type, ports: $("connector-orientation").value.split("|") };
+          const choices = { ...connectorChoices, [positionKey(joint.p)]: choice };
+          try {
+            commit(model.pipes, choices, joint.id, showAccessories);
+            report("接头朝向已更新，原有管子未移动。");
+          } finally {
+            refreshSelection();
+          }
+        })
+      );
+      $("add-from-joint").addEventListener("click", () => {
+        const joint = partsById.get(selectedId);
+        if (!joint?.p) return;
+        const spare = joint.availablePorts.filter(port => !joint.ports.includes(port));
+        switchEditorTab("add");
+        if (spare.length) {
+          $("direction").value = spare[0];
+          syncChoices();
+          report("已选择空闲接口方向，选择长度后可预览。");
+        } else report("当前接头接口已占满，需要换用更多接口的型号再添加。", true);
+      });
+      model = constructModel(model.pipes);
+      partsById.clear();
+      for (const part of [...model.pipes, ...model.joints]) partsById.set(part.id, part);
+      refreshEditor();
+      try {
+        const saved = $("saved-design").textContent.trim();
+        if (saved && saved !== "null") {
+          const state = parseDesign(JSON.parse(saved));
+          applyState(state);
+        }
+      } catch (error) {
+        report("内嵌方案加载失败：" + error.message, true);
+      }
+
+      const draftStorageKey = "climbing-frame-draft-v1:" + location.pathname;
+      let recoverableDraft = null;
+      function saveLocalDraft() {
+        try {
+          localStorage.setItem(
+            draftStorageKey,
+            JSON.stringify({ savedAt: new Date().toISOString(), design: serializedDesign() })
+          );
+          $("draft-status").textContent = "已自动保存到当前浏览器 · 不会跨设备同步";
+          recoverableDraft = null;
+          $("draft-recovery").hidden = true;
+        } catch {
+          $("draft-status").textContent = "本地草稿保存失败，请导出JSON或HTML保存修改。";
+        }
+      }
+      function readLocalDraft() {
+        $("draft-recovery").hidden = true;
+        try {
+          const raw = localStorage.getItem(draftStorageKey);
+          if (!raw) {
+            $("draft-status").textContent = "编辑后自动保存本地草稿；跨设备请导出文件。";
+            return;
+          }
+          if (raw.length > 1024 * 1024) throw new Error("草稿过大");
+          const stored = JSON.parse(raw);
+          parseDesign(stored.design);
+          recoverableDraft = stored.design;
+          $("draft-status").textContent = "发现本地草稿，可恢复继续编辑；当前模型尚未替换。";
+          $("draft-recovery").hidden = false;
+        } catch {
+          $("draft-status").textContent = "本地草稿不可用，请使用导出的方案文件。";
+        }
+      }
+      $("restore-draft").addEventListener("click", () =>
+        safely(() => {
+          if (!recoverableDraft) return;
+          const state = parseDesign(recoverableDraft);
+          commit(state.pipes, state.connectors, "", state.showAccessories);
+          fitModel();
+          report("已恢复本地草稿，可撤销。");
+        })
+      );
+      $("discard-draft").addEventListener("click", () => {
+        if (!confirm("仅删除当前浏览器保存的草稿？页面中的模型保持不变。")) return;
+        try {
+          localStorage.removeItem(draftStorageKey);
+          recoverableDraft = null;
+          $("draft-recovery").hidden = true;
+          $("draft-status").textContent = "本地草稿已删除；继续编辑会重新保存。";
+        } catch {
+          report("无法删除本地草稿。", true);
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.target instanceof Element && event.target.closest("input,select,textarea,[contenteditable=true]")) return;
+        if (event.key === "Escape") {
+          cancelPreview();
+          return;
+        }
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+        const key = event.key.toLowerCase();
+        if (key === "z") {
+          event.preventDefault();
+          $(event.shiftKey ? "redo" : "undo").click();
+        }
+        if (key === "y") {
+          event.preventDefault();
+          $("redo").click();
+        }
+      });
+      readLocalDraft();
+
+      if (gl) {
+        initializeGl();
+        setView("perspective");
+        new ResizeObserver(requestRender).observe(canvas);
+      } else {
+        canvas.hidden = true;
+        $("error").hidden = false;
+      }
+    </script>
+  </body>
+</html>
