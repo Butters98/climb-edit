@@ -611,7 +611,7 @@
             <div id="add-anchor-row" class="editor-row">
               <button data-anchor="start">从起点A添加</button><button data-anchor="end">从终点B添加</button>
             </div>
-            <p class="note">选择长度和方向 → 查看蓝色预览 → 确认添加</p>
+            <p class="note">选择长度和方向 → 预览新管 → 确认添加；预览中可直接切换长度、方向和端点</p>
             <div class="editor-row">
               <label
                 >新增管长<select id="new-length">
@@ -1664,7 +1664,7 @@
       $("edit-toggle").setAttribute("aria-pressed", "false");
       $("parts-toggle").setAttribute("aria-expanded", "false");
       function snapshot() {
-        return JSON.parse(JSON.stringify({ pipes: model.pipes, connectors: connectorChoices, showAccessories }));
+        return JSON.parse(JSON.stringify({ pipes: model.pipes, connectors: connectorChoices, showAccessories, selectedId }));
       }
       function findConnector(ports, requested) {
         const vectors = ports.map(portVector);
@@ -1821,7 +1821,7 @@
             : `${part.id} · ${pipeLength(part)}cm · ${part.start} → ${part.end}`
           : "先点击模型或在上方选择一个部件。";
       }
-      function applyState(state, selection = "") {
+      function applyState(state, selection = state.selectedId || "") {
         const candidate = constructModel(state.pipes, state.connectors || {});
         model = candidate;
         connectorChoices = {};
@@ -1953,20 +1953,19 @@
         );
       $("direction").value = "+Z";
       for (const type of jointCatalog) $("connector-model").add(new Option(type.name, type.name));
-      $("add-pipe").addEventListener("click", () =>
-        safely(() => {
-          const a = [...selectedAnchor()];
-          const b = add(a, mul(portVector($("direction").value), Number($("new-length").value) / 35));
-          const nearby = model.joints.find(j => Math.hypot(...sub(j.p, b)) < 0.000003);
-          const candidate = { id: nextPipeId(), a, b: nearby ? [...nearby.p] : b, group: "自定义" };
-          constructModel([...model.pipes, candidate], connectorChoices);
-          pendingPipe = candidate;
-          $("preview-actions").hidden = false;
-          $("add-pipe").hidden = true;
-          report("蓝色管为预览，确认后才会加入方案。");
-          if (gl) buildScene();
-        })
-      );
+      function previewNewPipe() {
+        const a = [...selectedAnchor()];
+        const b = add(a, mul(portVector($("direction").value), Number($("new-length").value) / 35));
+        const nearby = model.joints.find(j => Math.hypot(...sub(j.p, b)) < 0.000003);
+        const candidate = { id: nextPipeId(), a, b: nearby ? [...nearby.p] : b, group: "自定义" };
+        constructModel([...model.pipes, candidate], connectorChoices);
+        pendingPipe = candidate;
+        $("preview-actions").hidden = false;
+        $("add-pipe").hidden = true;
+        report("蓝色管为预览，确认后才会加入方案。");
+        if (gl) buildScene();
+      }
+      $("add-pipe").addEventListener("click", () => safely(previewNewPipe));
       $("resize-pipe").addEventListener("click", () =>
         safely(() => {
           const pipe = partsById.get(selectedId);
@@ -2039,6 +2038,7 @@
         safely(() => {
           if (model.pipes.length && !confirm("新建空白方案？当前编辑可撤销，也可先导出保存。")) return;
           commit([], {}, "", false);
+          switchEditorTab("add");
           report("选择长度和方向，从原点添加第一根管。");
         })
       );
@@ -2128,7 +2128,12 @@
         cancelPreview();
         report("已取消预览，方案未改变。");
       });
-      for (const id of ["direction", "new-length", "anchor"]) $(id).addEventListener("change", cancelPreview);
+      for (const id of ["direction", "new-length", "anchor"])
+        $(id).addEventListener("change", () => {
+          if (!pendingPipe) return;
+          cancelPreview();
+          safely(previewNewPipe);
+        });
       $("focus-part").addEventListener("click", () => {
         const part = partsById.get(selectedId);
         if (!part) return;
@@ -2243,11 +2248,13 @@
       partsById.clear();
       for (const part of [...model.pipes, ...model.joints]) partsById.set(part.id, part);
       refreshEditor();
+      let hasEmbeddedDesign = false;
       try {
         const saved = $("saved-design").textContent.trim();
         if (saved && saved !== "null") {
           const state = parseDesign(JSON.parse(saved));
           applyState(state);
+          hasEmbeddedDesign = true;
         }
       } catch (error) {
         report("内嵌方案加载失败：" + error.message, true);
@@ -2278,7 +2285,12 @@
           }
           if (raw.length > 1024 * 1024) throw new Error("草稿过大");
           const stored = JSON.parse(raw);
-          parseDesign(stored.design);
+          const state = parseDesign(stored.design);
+          if (!hasEmbeddedDesign) {
+            applyState(state);
+            $("draft-status").textContent = "已自动恢复上次编辑 · 修改会保存到当前浏览器";
+            return;
+          }
           recoverableDraft = stored.design;
           $("draft-status").textContent = "发现本地草稿，可恢复继续编辑；当前模型尚未替换。";
           $("draft-recovery").hidden = false;
