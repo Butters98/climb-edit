@@ -7,12 +7,15 @@ const elements = new Map();
 const context = {
   model: { pipes: [{ id: "P001", a: [0, 0, 0], b: [1, 0, 0] }], joints: [] },
   selectedId: "P001", connectorChoices: {}, showAccessories: false,
-  partsById: new Map(), pendingPipe: null, gl: null,
+  partsById: new Map(), pendingPipe: null, pendingResize: null, gl: null,
   $: id => {
     if (!elements.has(id)) elements.set(id, { value: "", addEventListener(type, handler) { this[type] = handler; } });
     return elements.get(id);
   },
-  selectedAnchor: () => [0, 0, 0], nextPipeId: () => "P002",
+  selectedAnchor: () => [0, 0, 0],
+  sub: (a, b) => a.map((v, i) => v - b[i]),
+  normalize: a => a.map(v => v / Math.hypot(...a)),
+  pipeLength: p => Math.round(Math.hypot(...p.b.map((v, i) => v - p.a[i])) * 35), nextPipeId: () => "P002",
   add: (a, b) => a.map((v, i) => v + b[i]), mul: (a, s) => a.map(v => v * s),
   portVector: key => key === "+Z" ? [0, 0, 1] : [1, 0, 0],
   constructModel: pipes => {
@@ -21,11 +24,13 @@ const context = {
   },
   report: message => { context.message = message; },
   safely: action => { try { action(); } catch (error) { context.message = error.message; } },
-  refreshEditor() {}, selectPart() {}
+  refreshEditor() {}, selectPart() {}, syncChoices() {}, requestRender() {},
+  positionKey: p => p.join(",")
 };
 runInNewContext(
   section("      function snapshot()", "      function findConnector") +
   section("      function applyState(", "      function commit(") +
+  section("      function newPipeCandidate(", "      let directionCache") +
   section("      function previewNewPipe()", '      $("resize-pipe").addEventListener') +
   section("      function cancelPreview()", "      function switchEditorTab(") +
   section('      for (const id of ["direction", "new-length", "anchor"])', '      $("focus-part").addEventListener') +
@@ -36,6 +41,15 @@ context.actions.applyState(before);
 assert.equal(context.selectedId, "P001", "撤销应恢复选中部件");
 context.actions.applyState({ pipes: [], connectors: {}, selectedId: "P001" });
 assert.equal(context.selectedId, "", "不存在的部件不应保持选中");
+context.model.joints = [{ id: "J001", p: [0, 0, 0] }];
+context.partsById.set("J001", context.model.joints[0]);
+context.selectedId = "J001";
+const jointSnapshot = context.actions.snapshot();
+const originalConstruct = context.constructModel;
+context.constructModel = pipes => ({ pipes, joints: [{ id: "J999", p: [0, 0, 0] }] });
+context.actions.applyState(jointSnapshot);
+assert.equal(context.selectedId, "J999", "接头编号改变后按坐标恢复选择");
+context.constructModel = originalConstruct;
 context.actions.applyState(before);
 context.$("new-length").value = "35";
 context.$("direction").value = "+Z";
@@ -56,3 +70,28 @@ assert.equal(context.$("preview-actions").hidden, true);
 assert.equal(context.$("add-pipe").hidden, false);
 assert.equal(context.message, "方向冲突");
 console.log("检查通过：历史选择恢复、预览参数更新、冲突清除及预览不提交。");
+
+context.invalid = false;
+context.selectedId = "P001";
+context.partsById.set("P001", context.model.pipes[0]);
+context.commit = (pipes, choices, selection, accessories) => {
+  context.committed = { pipes, accessories };
+  context.model.pipes = pipes;
+  context.pendingResize = null;
+};
+runInNewContext(section('      $("resize-pipe").addEventListener', '      $("delete-part").addEventListener') +
+  section('      $("accessories").addEventListener', '      $("fit-model").addEventListener'), context);
+context.$("anchor").value = "start";
+context.$("resize-length").value = "15";
+context.$("resize-pipe").click();
+assert.equal(context.model.pipes[0].b[0], 1, "修改长度预览不能改动模型");
+assert.equal(context.pendingResize.b[0], 15 / 35);
+context.$("cancel-resize").click();
+assert.equal(context.pendingResize, null);
+context.$("resize-pipe").click();
+context.$("confirm-resize").click();
+assert.equal(context.model.pipes[0].b[0], 15 / 35);
+context.$("accessories").checked = true;
+context.$("accessories").change();
+assert.equal(context.committed.accessories, true, "附件切换须进入统一提交流程");
+console.log("检查通过：改长预览、取消、确认及附件历史提交。");

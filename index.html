@@ -518,6 +518,10 @@
           font-size: 14px;
         }
       }
+      #model-markers { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+      #model-markers span { position:absolute; background:#fffefbe8; border:1px solid #28654e; border-radius:5px; padding:2px 5px; font-size:12px; color:#163f32; }
+      #model-markers span:empty { display:none; }
+      @media (max-width:680px) { .parts #edit-selected { display:block; font-size:12px; margin:5px 0; } }
     </style>
   </head>
   <body>
@@ -538,6 +542,7 @@
         tabindex="0"
         aria-label="蹦床和吊环攀爬架三维模型。拖动旋转，滚轮或加减键缩放，方向键旋转，按0复位。"
       ></canvas>
+      <div id="model-markers" aria-hidden="true"><svg width="100%" height="100%" style="position:absolute;inset:0"><line id="axis-line-x" stroke="#b74936" stroke-width="2"/><line id="axis-line-y" stroke="#28654e" stroke-width="2"/><line id="axis-line-z" stroke="#286aa5" stroke-width="2"/></svg><span id="marker-a"></span><span id="marker-b"></span><span id="axis-x">+X</span><span id="axis-y">+Y</span><span id="axis-z">+Z</span></div>
       <div id="error" class="error" hidden>当前浏览器未启用WebGL，请开启硬件加速后重新打开本图纸。</div>
       <div class="topbar">
         <label class="control"
@@ -591,8 +596,9 @@
                     <option value="35">35cm</option>
                     <option value="15">15cm</option>
                   </select></label
-                ><button id="resize-pipe">应用长度</button>
+                ><button id="resize-pipe">预览长度</button>
               </div>
+              <div id="resize-actions" class="editor-row" hidden><button id="confirm-resize">确认改长</button><button id="cancel-resize">取消</button></div>
               <p class="note">改长度会断开另一端，其他管子保持原位；不会自动拉伸整个框架。</p>
             </div>
             <div id="joint-fields" hidden>
@@ -622,6 +628,7 @@
             </div>
             <div id="length-buttons" class="choice-grid"></div>
             <div id="direction-buttons" class="choice-grid directions"></div>
+            <p id="direction-help" class="note" role="status"></p>
             <button id="add-pipe">预览新管</button>
             <div id="preview-actions" class="editor-row" hidden>
               <button id="confirm-add">确认添加</button><button id="cancel-add">取消预览</button>
@@ -953,6 +960,8 @@
       let selectedId = "";
       let explosion = 0;
       let pendingPipe = null;
+      let pendingResize = null;
+      let draftIdentity = "";
       let explodeOrigin = [1.5, 1, 2];
       let objects = [];
       let projectionView;
@@ -1195,9 +1204,9 @@
           }
           upload(mesh, [0.86, 0.86, 0.79]);
         }
-        if (pendingPipe) {
+        if (pendingPipe || pendingResize) {
           mesh = [];
-          const preview = displayedPipe(pendingPipe);
+          const preview = displayedPipe(pendingPipe || pendingResize);
           cylinder(mesh, preview.a, preview.b, 0.073, 14);
           sphere(mesh, preview.b, 0.105);
           upload(mesh, [0.2, 0.78, 0.86]);
@@ -1263,6 +1272,7 @@
         gl.uniformMatrix4fv(matrixLocation, false, projectionView);
         gl.enableVertexAttribArray(positionLocation);
         gl.enableVertexAttribArray(normalLocation);
+        updateModelMarkers();
         objects.forEach(object => {
           gl.bindBuffer(gl.ARRAY_BUFFER, object.buffer);
           gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 24, 0);
@@ -1270,6 +1280,31 @@
           gl.uniform3fv(colorLocation, object.id && object.id === selectedId ? [1, 0.5, 0.1] : object.color);
           gl.drawArrays(gl.TRIANGLES, 0, object.count);
         });
+      }
+      function updateModelMarkers() {
+        const part = partsById.get(selectedId);
+        const pipe = pendingResize || (part && !part.p ? part : null);
+        const origin = pipe ? expandedPoint(pipe[$("anchor").value === "start" ? "a" : "b"]) : part?.p ? expandedPoint(part.p) : camera.target;
+        const positions = { "marker-a": pipe && expandedPoint(pipe.a), "marker-b": pipe && expandedPoint(pipe.b),
+          "axis-x": add(origin, [0.5, 0, 0]), "axis-y": add(origin, [0, 0.5, 0]), "axis-z": add(origin, [0, 0, 0.5]) };
+        const projectedOrigin = project(origin);
+        for (const [id, point] of Object.entries(positions)) {
+          const label = $(id);
+          if (id.startsWith("marker")) {
+            const fixed = (id === "marker-a") === ($("anchor").value === "start");
+            label.textContent = pipe ? (id === "marker-a" ? "A" : "B") + (fixed ? " 固定端" : " 移动端") : "";
+          }
+          const projected = point && project(point);
+          label.hidden = !projected || projected[2] <= 0 || projected[0] < 0 || projected[0] > canvas.clientWidth || projected[1] < 0 || projected[1] > canvas.clientHeight;
+          if (id.startsWith("axis-")) {
+            const line = $("axis-line-" + id.slice(-1));
+            line.style.display = label.hidden || projectedOrigin[2] <= 0 ? "none" : "";
+            if (projected) {
+              for (const [name, value] of Object.entries({ x1: projectedOrigin[0], y1: projectedOrigin[1], x2: projected[0], y2: projected[1] })) line.setAttribute(name, value);
+            }
+          }
+          if (projected) { label.style.left = projected[0] + "px"; label.style.top = projected[1] + "px"; }
+        }
       }
       function requestRender() {
         if (!renderPending) {
@@ -1664,7 +1699,7 @@
       $("edit-toggle").setAttribute("aria-pressed", "false");
       $("parts-toggle").setAttribute("aria-expanded", "false");
       function snapshot() {
-        return JSON.parse(JSON.stringify({ pipes: model.pipes, connectors: connectorChoices, showAccessories, selectedId }));
+        return JSON.parse(JSON.stringify({ pipes: model.pipes, connectors: connectorChoices, showAccessories, selectedId, selectedJoint: partsById.get(selectedId)?.p || null }));
       }
       function findConnector(ports, requested) {
         const vectors = ports.map(portVector);
@@ -1832,7 +1867,8 @@
         showAccessories = state.showAccessories === true;
         partsById.clear();
         for (const part of [...model.pipes, ...model.joints]) partsById.set(part.id, part);
-        selectedId = partsById.has(selection) ? selection : "";
+        const restoredJoint = state.selectedJoint && model.joints.find(j => positionKey(j.p) === positionKey(state.selectedJoint));
+        selectedId = restoredJoint?.id || (partsById.has(selection) ? selection : "");
         refreshEditor();
         selectPart(selectedId);
         if (gl) buildScene();
@@ -1953,11 +1989,28 @@
         );
       $("direction").value = "+Z";
       for (const type of jointCatalog) $("connector-model").add(new Option(type.name, type.name));
-      function previewNewPipe() {
+      function newPipeCandidate(direction) {
         const a = [...selectedAnchor()];
-        const b = add(a, mul(portVector($("direction").value), Number($("new-length").value) / 35));
+        const b = add(a, mul(portVector(direction), Number($("new-length").value) / 35));
         const nearby = model.joints.find(j => Math.hypot(...sub(j.p, b)) < 0.000003);
-        const candidate = { id: nextPipeId(), a, b: nearby ? [...nearby.p] : b, group: "自定义" };
+        return { id: nextPipeId(), a, b: nearby ? [...nearby.p] : b, group: "自定义" };
+      }
+      let directionCache = null;
+      function availableDirections() {
+        const key = [selectedId, $("anchor").value, $("new-length").value].join("|");
+        if (directionCache?.model === model && directionCache.key === key) return directionCache.result;
+        const result = new Map();
+        for (const direction of directions) {
+          try {
+            constructModel([...model.pipes, newPipeCandidate(direction.key)], connectorChoices);
+            result.set(direction.key, "");
+          } catch (error) { result.set(direction.key, error.message); }
+        }
+        directionCache = { model, key, result };
+        return result;
+      }
+      function previewNewPipe() {
+        const candidate = newPipeCandidate($("direction").value);
         constructModel([...model.pipes, candidate], connectorChoices);
         pendingPipe = candidate;
         $("preview-actions").hidden = false;
@@ -1981,14 +2034,22 @@
           replacement[moving] = add(pipe[anchor], mul(normalize(sub(pipe[moving], pipe[anchor])), length / 35));
           const nearby = model.joints.find(j => Math.hypot(...sub(j.p, replacement[moving])) < 0.000003);
           if (nearby) replacement[moving] = [...nearby.p];
-          commit(
-            model.pipes.map(p => (p.id === pipe.id ? replacement : p)),
-            connectorChoices,
-            pipe.id
-          );
-          report("长度已改变；原活动端已断开，其他管子保持原位。");
+          cancelPreview();
+          constructModel(model.pipes.map(p => p.id === pipe.id ? replacement : p), connectorChoices);
+          pendingResize = replacement;
+          $("resize-actions").hidden = false;
+          report("蓝色为新长度；A/B标记固定端与移动端。确认后应用，其他管子保持原位。");
+          if (gl) buildScene();
         })
       );
+      $("confirm-resize").addEventListener("click", () => safely(() => {
+        if (!pendingResize) return;
+        const replacement = pendingResize;
+        commit(model.pipes.map(p => p.id === replacement.id ? replacement : p), connectorChoices, replacement.id);
+        report("长度已改变，可撤销。其他管子保持原位。");
+      }));
+      $("cancel-resize").addEventListener("click", cancelPreview);
+      $("resize-length").addEventListener("change", cancelPreview);
       $("delete-part").addEventListener("click", () =>
         safely(() => {
           const part = partsById.get(selectedId);
@@ -2066,9 +2127,7 @@
         })
       );
       $("accessories").addEventListener("change", () => {
-        showAccessories = $("accessories").checked;
-        saveLocalDraft();
-        if (gl) buildScene();
+        safely(() => commit(model.pipes, connectorChoices, selectedId, $("accessories").checked));
       });
       $("fit-model").addEventListener("click", fitModel);
       $("fit-all").addEventListener("click", fitModel);
@@ -2094,14 +2153,16 @@
       });
       $("export-html").addEventListener("click", () => {
         const clone = document.documentElement.cloneNode(true);
-        clone.querySelector("#saved-design").textContent = JSON.stringify(serializedDesign()).replaceAll("<", "\\u003c");
+        clone.querySelector("#saved-design").textContent = JSON.stringify({ ...serializedDesign(), draftId: crypto.randomUUID() }).replaceAll("<", "\\u003c");
         downloadFile("我的攀爬架编辑器.html", "<!doctype html>\r\n" + clone.outerHTML, "text/html;charset=utf-8");
         report("已导出包含当前方案的完整HTML，可离线编辑。");
       });
 
       function cancelPreview() {
-        if (!pendingPipe) return;
+        if (!pendingPipe && !pendingResize) return;
         pendingPipe = null;
+        pendingResize = null;
+        $("resize-actions").hidden = true;
         report("");
         $("preview-actions").hidden = true;
         $("add-pipe").hidden = false;
@@ -2130,9 +2191,11 @@
       });
       for (const id of ["direction", "new-length", "anchor"])
         $(id).addEventListener("change", () => {
-          if (!pendingPipe) return;
+          const adding = !!pendingPipe;
           cancelPreview();
-          safely(previewNewPipe);
+          if (adding) safely(previewNewPipe);
+          syncChoices();
+          requestRender();
         });
       $("focus-part").addEventListener("click", () => {
         const part = partsById.get(selectedId);
@@ -2187,6 +2250,20 @@
         document
           .querySelectorAll("[data-direction]")
           .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.direction === $("direction").value)));
+        const availability = availableDirections();
+        for (const option of $("direction").options) {
+          const reason = availability.get(option.value);
+          option.disabled = !!reason;
+          option.title = reason || "可添加";
+        }
+        for (const button of document.querySelectorAll("[data-direction]")) {
+          const reason = availability.get(button.dataset.direction);
+          button.disabled = !!reason;
+          button.title = reason || "可添加";
+        }
+        $("add-pipe").disabled = !!availability.get($("direction").value);
+        $("direction-help").textContent = availability.get($("direction").value) || "当前方向可添加；灰色方向不可用。";
+
       }
       for (const id of ["direction", "new-length"]) $(id).addEventListener("change", syncChoices);
       syncChoices();
@@ -2252,7 +2329,9 @@
       try {
         const saved = $("saved-design").textContent.trim();
         if (saved && saved !== "null") {
-          const state = parseDesign(JSON.parse(saved));
+          const embedded = JSON.parse(saved);
+          const state = parseDesign(embedded);
+          draftIdentity = /^[a-zA-Z0-9-]{1,80}$/.test(embedded.draftId || "") ? embedded.draftId : "";
           applyState(state);
           hasEmbeddedDesign = true;
         }
@@ -2260,7 +2339,7 @@
         report("内嵌方案加载失败：" + error.message, true);
       }
 
-      const draftStorageKey = "climbing-frame-draft-v1:" + location.pathname;
+      const draftStorageKey = "climbing-frame-draft-v1:" + location.pathname + (draftIdentity ? ":" + draftIdentity : "");
       let recoverableDraft = null;
       function saveLocalDraft() {
         try {
@@ -2286,7 +2365,7 @@
           if (raw.length > 1024 * 1024) throw new Error("草稿过大");
           const stored = JSON.parse(raw);
           const state = parseDesign(stored.design);
-          if (!hasEmbeddedDesign) {
+          if (!hasEmbeddedDesign || draftIdentity) {
             applyState(state);
             $("draft-status").textContent = "已自动恢复上次编辑 · 修改会保存到当前浏览器";
             return;
