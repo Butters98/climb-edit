@@ -646,7 +646,7 @@
           <div id="files-section" hidden>
             <label class="check"><input id="accessories" type="checkbox" checked />显示原图软垫、蹦床及吊环</label>
             <p class="note">
-              附件保留显示，位置固定，仅作参考。35/15cm按管轴长建模，未计入接头外壳与插入量。45接头按管路转向45°建模。
+              附件随完整边框显示，缺少对应支撑时隐藏，仅作参考。35/15cm按管轴长建模，未计入接头外壳与插入量。45接头按管路转向45°建模。
             </p>
             <div class="editor-row"><button id="new-design">新建空白</button><button id="roof-example">屋顶示例</button></div>
             <button id="restore-reference">恢复参考图</button>
@@ -1009,6 +1009,52 @@
         const offset = sub(expandedPoint(middle), middle);
         return { a: add(pipe.a, offset), b: add(pipe.b, offset) };
       }
+      function coversIntervals(intervals, start, end) {
+        let cursor = start;
+        for (const [a, b] of intervals.sort((a, b) => a[0] - b[0])) {
+          if (a > cursor + 0.000001) return false;
+          cursor = Math.max(cursor, b);
+        }
+        return cursor >= end - 0.000001;
+      }
+      function rectangularAccessoryFrame(group) {
+        const pipes = model.pipes.filter(pipe => pipe.group === group);
+        if (pipes.length < 4) return null;
+        const points = pipes.flatMap(pipe => [pipe.a, pipe.b]);
+        const z = points[0][2];
+        if (points.some(p => Math.abs(p[2] - z) > 0.000001)) return null;
+        const min = [0, 1].map(axis => Math.min(...points.map(p => p[axis])));
+        const max = [0, 1].map(axis => Math.max(...points.map(p => p[axis])));
+        if (max.some((value, axis) => value - min[axis] <= 0.32)) return null;
+        for (const axis of [0, 1]) {
+          const other = 1 - axis;
+          for (const edge of [min[other], max[other]]) {
+            const intervals = pipes
+              .filter(p => Math.abs(p.a[other] - edge) < 0.000001 && Math.abs(p.b[other] - edge) < 0.000001)
+              .map(p => [Math.min(p.a[axis], p.b[axis]), Math.max(p.a[axis], p.b[axis])]);
+            if (!coversIntervals(intervals, min[axis], max[axis])) return null;
+          }
+        }
+        return { min, max, z };
+      }
+      function accessoryLayout() {
+        const platforms = [
+          { frame: rectangularAccessoryFrame("低平台边框"), color: [0.98, 0.75, 0.13] },
+          { frame: rectangularAccessoryFrame("高平台边框"), color: [0.91, 0.14, 0.2] }
+        ].filter(platform => platform.frame);
+        const trampoline = rectangularAccessoryFrame("蹦床边框");
+        const rings = [0.85, 1.45].map(y => [2, y, 4]).filter(anchor => model.pipes.some(pipe => {
+          if (pipe.group !== "吊环横梁") return false;
+          const direction = sub(pipe.b, pipe.a);
+          const t = dot(sub(anchor, pipe.a), direction) / dot(direction, direction);
+          return t >= -0.000001 && t <= 1.000001 && Math.hypot(...sub(anchor, add(pipe.a, mul(direction, t)))) < 0.000001;
+        }));
+        const bounds = [];
+        for (const frame of [...platforms.map(p => p.frame), trampoline].filter(Boolean))
+          bounds.push([...frame.min, frame.z - 0.02], [...frame.max, frame.z + 0.025]);
+        for (const [x, y, z] of rings) bounds.push([x - 0.04, y - 0.19, z - 1.45], [x + 0.04, y + 0.19, z + 0.065]);
+        return { platforms, trampoline, rings, bounds };
+      }
       function buildScene() {
         if (model.joints.length)
           explodeOrigin = [0, 1, 2].map(
@@ -1052,60 +1098,48 @@
           upload(mesh, [0.13, 0.16, 0.16], joint.id);
         });
         if (explosion === 0 && showAccessories) {
-          mesh = [];
-          box(mesh, [0.05, 0.05, 1.98], [0.95, 0.95, 2.025]);
-          upload(mesh, [0.98, 0.75, 0.13]);
-          mesh = [];
-          box(mesh, [0.05, 1.05, 2.98], [0.95, 1.95, 3.025]);
-          upload(mesh, [0.91, 0.14, 0.2]);
-          mesh = [];
-          box(mesh, [1.11, 0.11, 0.99], [3.89, 1.89, 1.01]);
-          upload(mesh, [0.22, 0.27, 0.31]);
-          mesh = [];
-          for (let i = 0; i <= 22; i++) {
-            const t = 0.16 + (i * 2.68) / 22;
-            for (const y of [0, 2]) {
-              const innerY = y === 0 ? 0.13 : 1.87;
-              loopTube(
-                mesh,
-                [
-                  [1 + t, y - 0.04, 1.01],
-                  [1 + t, y, 1.09],
-                  [1 + t, innerY, 1.03]
-                ],
-                0.012
-              );
-            }
+          const { platforms, trampoline, rings } = accessoryLayout();
+          for (const { frame, color } of platforms) {
+            mesh = [];
+            box(mesh, [frame.min[0] + 0.05, frame.min[1] + 0.05, frame.z - 0.02],
+              [frame.max[0] - 0.05, frame.max[1] - 0.05, frame.z + 0.025]);
+            upload(mesh, color);
           }
-          for (let i = 0; i <= 14; i++) {
-            const t = 0.16 + (i * 1.68) / 14;
-            for (const x of [1, 4]) {
-              const innerX = x === 1 ? 1.13 : 3.87;
-              loopTube(
-                mesh,
-                [
-                  [x - 0.04, t, 1.01],
-                  [x, t, 1.09],
-                  [innerX, t, 1.03]
-                ],
-                0.012
-              );
+          if (trampoline) {
+            const { min, max, z } = trampoline;
+            mesh = [];
+            box(mesh, [min[0] + 0.11, min[1] + 0.11, z - 0.01], [max[0] - 0.11, max[1] - 0.11, z + 0.01]);
+            upload(mesh, [0.22, 0.27, 0.31]);
+            mesh = [];
+            for (const axis of [0, 1]) {
+              const other = 1 - axis;
+              const span = max[axis] - min[axis] - 0.32;
+              const count = Math.max(1, Math.round(span / 0.12));
+              for (let i = 0; i <= count; i++) {
+                const position = min[axis] + 0.16 + (i * span) / count;
+                for (const edge of [min[other], max[other]]) {
+                  const inward = edge === min[other] ? 1 : -1;
+                  const point = (offset, height) => axis === 0
+                    ? [position, edge + offset, height] : [edge + offset, position, height];
+                  loopTube(mesh, [point(-inward * 0.04, z + 0.01), point(0, z + 0.09), point(inward * 0.13, z + 0.03)], 0.012);
+                }
+              }
             }
+            upload(mesh, [0.1, 0.13, 0.15]);
           }
-          upload(mesh, [0.1, 0.13, 0.15]);
           mesh = [];
-          for (const y of [0.85, 1.45]) {
-            box(mesh, [1.985, y - 0.018, 2.95], [2.015, y + 0.018, 4.065]);
+          for (const [x, y, z] of rings) {
+            box(mesh, [x - 0.015, y - 0.018, z - 1.05], [x + 0.015, y + 0.018, z + 0.065]);
             const ringPoints = Array.from({ length: 37 }, (_, i) => [
-              2,
+              x,
               y + Math.cos((i / 36) * Math.PI * 2) * 0.155,
-              2.77 + Math.sin((i / 36) * Math.PI * 2) * 0.19
+              z - 1.23 + Math.sin((i / 36) * Math.PI * 2) * 0.19
             ]);
             const ringMesh = [];
             loopTube(ringMesh, ringPoints, 0.031);
             upload(ringMesh, [0.98, 0.73, 0.14]);
           }
-          upload(mesh, [0.86, 0.86, 0.79]);
+          if (rings.length) upload(mesh, [0.86, 0.86, 0.79]);
         }
         if (pendingPipe || pendingResize) {
           mesh = [];
@@ -1463,6 +1497,21 @@
         initializeGl();
       });
       const referencePipes = JSON.parse(JSON.stringify(model.pipes));
+      function isPreviousReferenceDraft(state) {
+        // 只升级未经修改的上一版3×2默认架；自定义方案和内嵌方案保留原样。
+        if (state.showAccessories !== true || Object.keys(state.connectors || {}).length || state.pipes.length !== 79) return false;
+        const previous = new Map(referencePipes.filter(pipe => Number(pipe.id.slice(1)) <= 79).map(pipe => [pipe.id, {
+          a: pipe.a.map((value, axis) => axis === 0 && value === 4 ? 3 : value),
+          b: pipe.b.map((value, axis) => axis === 0 && value === 4 ? 3 : value),
+          group: pipe.group
+        }]));
+        return previous.size === 79 && new Set(state.pipes.map(pipe => pipe.id)).size === 79 && state.pipes.every(pipe => {
+          const expected = previous.get(pipe.id);
+          return expected && pipe.group === expected.group &&
+            pipe.a.every((value, axis) => value === expected.a[axis]) &&
+            pipe.b.every((value, axis) => value === expected.b[axis]);
+        });
+      }
       const jointCatalog = [
         {
           name: "一字接头",
@@ -1807,7 +1856,7 @@
           const displayed = displayedPipe(pipe);
           points.push(displayed.a, displayed.b);
         }
-        if (showAccessories && explosion === 0) points.push([0, 0, 0], [4, 2, 4]);
+        if (showAccessories && explosion === 0) points.push(...accessoryLayout().bounds);
         if (!points.length) {
           camera.target = [0, 0, 0.5];
           camera.distance = 3;
@@ -2259,7 +2308,7 @@
         try {
           localStorage.setItem(
             draftStorageKey,
-            JSON.stringify({ savedAt: new Date().toISOString(), design: serializedDesign() })
+            JSON.stringify({ savedAt: new Date().toISOString(), referenceRevision: 2, design: serializedDesign() })
           );
           $("draft-status").textContent = "已自动保存到当前浏览器 · 不会跨设备同步";
           recoverableDraft = null;
@@ -2279,6 +2328,13 @@
           if (raw.length > 1024 * 1024) throw new Error("草稿过大");
           const stored = JSON.parse(raw);
           const state = parseDesign(stored.design);
+          if (!hasEmbeddedDesign && !draftIdentity && stored.referenceRevision === undefined && isPreviousReferenceDraft(state)) {
+            applyState({ pipes: referencePipes, connectors: {}, showAccessories: true });
+            recoverableDraft = stored.design;
+            $("draft-status").textContent = "已载入新版长4×宽2默认模型；旧版默认草稿保留，可恢复。";
+            $("draft-recovery").hidden = false;
+            return;
+          }
           if (!hasEmbeddedDesign || draftIdentity) {
             applyState(state);
             $("draft-status").textContent = "已自动恢复上次编辑 · 修改会保存到当前浏览器";

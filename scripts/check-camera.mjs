@@ -71,8 +71,10 @@ assertFramed(context.model.joints.map(j => j.p));
 
 context.explosion = 0;
 context.showAccessories = true;
+modelFrom([{ a: [18, -18, 18], b: [19, -18, 18] }]);
 context.setView("perspective");
-assertFramed([[0, 0, 0], [4, 2, 4]]);
+assert.deepEqual(Array.from(context.camera.target), [18.5, -18, 18], "未匹配边框时不能把默认附件加入自定义模型取景");
+assertFramed(context.model.joints.map(j => j.p));
 modelFrom([]);
 context.showAccessories = false;
 context.setView("front");
