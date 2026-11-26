@@ -105,7 +105,8 @@ const adding = {
     return controls.get(id);
   },
   document: { querySelectorAll: () => [] }, requestRender() {}, safely: action => action(), report() {},
-  commit(pipes, choices, selection) {
+  commit(pipes, choices, selection, accessories) {
+    adding.lastAccessories = accessories;
     adding.model = adding.construct(pipes, choices);
     adding.partsById = new Map([...adding.model.pipes, ...adding.model.joints].map(p => [p.id, p]));
     adding.selectedId = selection;
@@ -154,3 +155,26 @@ assert.equal(adding.lastTab, "add", "空白方案应直接进入添加管子");
 assert.equal(adding.lastView, "perspective", "新建空白须重置到原点取景");
 assert.match(adding.$("add-origin").textContent, /原点添加第一根管/);
 console.log("检查通过：隔离状态下的新建确认、取消、添加入口与视角复位。");
+
+const referenceFixture = {};
+runInNewContext(section("      let model =", "      const canvas =") + "this.pipes = model.pipes;", referenceFixture);
+adding.referencePipes = referenceFixture.pipes;
+runInNewContext(section("      function modelDimensionSummary()", "      function refreshEditor()") +
+  section("      function loadReferenceModel()", '      $("roof-example").addEventListener') +
+  "this.dimensions = modelDimensionSummary;", adding);
+const oldReference = referenceFixture.pipes.filter(p => Number(p.id.slice(1)) <= 79).map(p => ({ ...p,
+  a: p.a.map((v, axis) => axis === 0 && v === 4 ? 3 : v),
+  b: p.b.map((v, axis) => axis === 0 && v === 4 ? 3 : v)
+}));
+adding.model = adding.construct(oldReference);
+assert.match(adding.dimensions(), /当前长3 × 宽2 × 高4根/, "尺寸提示必须反映实际旧模型");
+adding.$("load-default").click();
+assert.equal(adding.model.pipes.length, 95, "顶部载入默认按钮必须实际载入完整95管模型");
+assert.match(adding.dimensions(), /当前长4 × 宽2 × 高4根.*140 × 70 × 140 cm/, "点击后实际跨度必须变4×2×4");
+assert.equal(adding.lastAccessories, true);
+assert.equal(adding.lastView, "perspective");
+adding.model = { pipes: [] };
+assert.match(adding.dimensions(), /空白方案/);
+adding.model = { pipes: [{ a: [0, 0, 0], b: [Math.SQRT1_2, 0, Math.SQRT1_2] }] };
+assert.match(adding.dimensions(), /当前跨度：长24.75 × 宽0 × 高24.75 cm/, "斜管按实际投影跨度显示厘米");
+console.log("检查通过：旧模型实际尺寸提示、顶部一键载入4×2默认、空白与斜管跨度。");

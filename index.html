@@ -61,6 +61,11 @@
       button:hover {
         background: #e6eee5;
       }
+      #load-default {
+        color: var(--green);
+        border-color: #85aa94;
+        background: #edf3ed;
+      }
       button:focus-visible,
       input:focus-visible,
       select:focus-visible,
@@ -536,7 +541,7 @@
     <header>
       <div>
         <h1>蹦床＋吊环攀爬架</h1>
-        <p>默认长4 × 宽2 × 高4根 · 35cm / 15cm · 支持45°屋顶</p>
+        <p id="model-summary" role="status">当前长4 × 宽2 × 高4根 · 140 × 70 × 140 cm</p>
       </div>
       <nav class="views" aria-label="模型视角">
         <button data-view="perspective" aria-pressed="true">立体</button
@@ -560,7 +565,7 @@
           ></label
         >
         <div class="actions">
-          <span class="badge">拖动旋转 · 滚轮缩放</span><button id="edit-toggle" aria-pressed="false">编辑模式</button
+          <button id="load-default" title="载入长4根、宽2根、高4根的默认模型，当前方案可撤销恢复">载入4×2默认</button><button id="edit-toggle" aria-pressed="false">编辑模式</button
           ><button id="parts-toggle" aria-expanded="false" aria-controls="parts-panel">查看配件</button>
         </div>
       </div>
@@ -1497,21 +1502,6 @@
         initializeGl();
       });
       const referencePipes = JSON.parse(JSON.stringify(model.pipes));
-      function isPreviousReferenceDraft(state) {
-        // 只升级未经修改的上一版3×2默认架；自定义方案和内嵌方案保留原样。
-        if (state.showAccessories !== true || Object.keys(state.connectors || {}).length || state.pipes.length !== 79) return false;
-        const previous = new Map(referencePipes.filter(pipe => Number(pipe.id.slice(1)) <= 79).map(pipe => [pipe.id, {
-          a: pipe.a.map((value, axis) => axis === 0 && value === 4 ? 3 : value),
-          b: pipe.b.map((value, axis) => axis === 0 && value === 4 ? 3 : value),
-          group: pipe.group
-        }]));
-        return previous.size === 79 && new Set(state.pipes.map(pipe => pipe.id)).size === 79 && state.pipes.every(pipe => {
-          const expected = previous.get(pipe.id);
-          return expected && pipe.group === expected.group &&
-            pipe.a.every((value, axis) => value === expected.a[axis]) &&
-            pipe.b.every((value, axis) => value === expected.b[axis]);
-        });
-      }
       const jointCatalog = [
         {
           name: "一字接头",
@@ -1764,7 +1754,17 @@
         $("edit-status").textContent = message;
         $("edit-status").style.color = isError ? "#a53626" : "#28654e";
       }
+      function modelDimensionSummary() {
+        if (!model.pipes.length) return "当前为空白方案 · 默认模型长4根、宽2根、高4根";
+        const points = model.pipes.flatMap(pipe => [pipe.a, pipe.b]);
+        const spans = [0, 1, 2].map(axis => Math.max(...points.map(p => p[axis])) - Math.min(...points.map(p => p[axis])));
+        const cm = spans.map(value => Number((value * 35).toFixed(2)));
+        return spans.every(value => Math.abs(value - Math.round(value)) < 0.000001)
+          ? `当前长${Math.round(spans[0])} × 宽${Math.round(spans[1])} × 高${Math.round(spans[2])}根 · ${cm.join(" × ")} cm`
+          : `当前跨度：长${cm[0]} × 宽${cm[1]} × 高${cm[2]} cm`;
+      }
       function refreshEditor() {
+        $("model-summary").textContent = modelDimensionSummary();
         $("counts").textContent = `${model.pipes.length}根管 · ${model.joints.length}个接头`;
         $("length-counts").textContent = `35cm：${model.pipes.filter(p => pipeLength(p) === 35).length}根　15cm：${
           model.pipes.filter(p => pipeLength(p) === 15).length
@@ -2058,14 +2058,13 @@
           report("选择长度和方向，从原点添加第一根管。");
         })
       );
-      $("restore-reference").addEventListener("click", () =>
-        safely(() => {
-          if (!confirm("恢复参考图？当前编辑可撤销，也可先导出保存。")) return;
-          commit(referencePipes, {}, "", true);
-          setView("perspective");
-          report("已恢复参考模型。");
-        })
-      );
+      function loadReferenceModel() {
+        commit(referencePipes, {}, "", true);
+        setView("perspective");
+        report("已载入长4×宽2×高4根的默认模型，当前方案可撤销恢复。");
+      }
+      $("restore-reference").addEventListener("click", () => safely(loadReferenceModel));
+      $("load-default").addEventListener("click", () => safely(loadReferenceModel));
       $("roof-example").addEventListener("click", () =>
         safely(() => {
           if (model.pipes.length && !confirm("载入独立屋顶示例？当前方案可撤销。")) return;
@@ -2302,8 +2301,12 @@
         report("内嵌方案加载失败：" + error.message, true);
       }
 
-      const draftStorageKey = "climbing-frame-draft-v1:" + location.pathname + (draftIdentity ? ":" + draftIdentity : "");
+      const draftStorageKey = hasEmbeddedDesign || draftIdentity
+        ? "climbing-frame-draft-v1:" + location.pathname + (draftIdentity ? ":" + draftIdentity : "")
+        : "climbing-frame-draft-v2:reference-4x2:" + location.pathname;
+      const legacyDraftStorageKey = "climbing-frame-draft-v1:" + location.pathname;
       let recoverableDraft = null;
+      let recoverableDraftKey = "";
       function saveLocalDraft() {
         try {
           localStorage.setItem(
@@ -2312,15 +2315,23 @@
           );
           $("draft-status").textContent = "已自动保存到当前浏览器 · 不会跨设备同步";
           recoverableDraft = null;
+          recoverableDraftKey = "";
           $("draft-recovery").hidden = true;
         } catch {
           $("draft-status").textContent = "本地草稿保存失败，请导出JSON或HTML保存修改。";
         }
       }
       function readLocalDraft() {
+        recoverableDraft = null;
+        recoverableDraftKey = "";
         $("draft-recovery").hidden = true;
         try {
-          const raw = localStorage.getItem(draftStorageKey);
+          let sourceKey = draftStorageKey;
+          let raw = localStorage.getItem(sourceKey);
+          if (!raw && !hasEmbeddedDesign && !draftIdentity) {
+            sourceKey = legacyDraftStorageKey;
+            raw = localStorage.getItem(sourceKey);
+          }
           if (!raw) {
             $("draft-status").textContent = "编辑后自动保存本地草稿；跨设备请导出文件。";
             return;
@@ -2328,20 +2339,16 @@
           if (raw.length > 1024 * 1024) throw new Error("草稿过大");
           const stored = JSON.parse(raw);
           const state = parseDesign(stored.design);
-          if (!hasEmbeddedDesign && !draftIdentity && stored.referenceRevision === undefined && isPreviousReferenceDraft(state)) {
-            applyState({ pipes: referencePipes, connectors: {}, showAccessories: true });
-            recoverableDraft = stored.design;
-            $("draft-status").textContent = "已载入新版长4×宽2默认模型；旧版默认草稿保留，可恢复。";
-            $("draft-recovery").hidden = false;
-            return;
-          }
-          if (!hasEmbeddedDesign || draftIdentity) {
+          if (sourceKey === draftStorageKey && (!hasEmbeddedDesign || draftIdentity)) {
             applyState(state);
             $("draft-status").textContent = "已自动恢复上次编辑 · 修改会保存到当前浏览器";
             return;
           }
           recoverableDraft = stored.design;
-          $("draft-status").textContent = "发现本地草稿，可恢复继续编辑；当前模型尚未替换。";
+          recoverableDraftKey = sourceKey;
+          $("draft-status").textContent = sourceKey === legacyDraftStorageKey && !hasEmbeddedDesign
+            ? "当前显示新版长4×宽2默认模型；旧版草稿保留，可手动恢复。"
+            : "发现本地草稿，可恢复继续编辑；当前模型尚未替换。";
           $("draft-recovery").hidden = false;
         } catch {
           $("draft-status").textContent = "本地草稿不可用，请使用导出的方案文件。";
@@ -2359,8 +2366,9 @@
       $("discard-draft").addEventListener("click", () => {
         if (!confirm("仅删除当前浏览器保存的草稿？页面中的模型保持不变。")) return;
         try {
-          localStorage.removeItem(draftStorageKey);
+          localStorage.removeItem(recoverableDraftKey || draftStorageKey);
           recoverableDraft = null;
+          recoverableDraftKey = "";
           $("draft-recovery").hidden = true;
           $("draft-status").textContent = "本地草稿已删除；继续编辑会重新保存。";
         } catch {
