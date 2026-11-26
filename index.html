@@ -565,7 +565,7 @@
           ></label
         >
         <div class="actions">
-          <button id="load-default" title="载入长4根、宽2根、高4根的默认模型，当前方案可撤销恢复">载入4×2默认</button><button id="edit-toggle" aria-pressed="false">编辑模式</button
+          <button id="load-default" title="载入长4根、宽2根、高4根且蹦床为2×2根的默认模型，当前方案可撤销恢复">载入4×2默认</button><button id="edit-toggle" aria-pressed="false">编辑模式</button
           ><button id="parts-toggle" aria-expanded="false" aria-controls="parts-panel">查看配件</button>
         </div>
       </div>
@@ -651,7 +651,7 @@
           <div id="files-section" hidden>
             <label class="check"><input id="accessories" type="checkbox" checked />显示原图软垫、蹦床及吊环</label>
             <p class="note">
-              附件随完整边框显示，缺少对应支撑时隐藏，仅作参考。35/15cm按管轴长建模，未计入接头外壳与插入量。45接头按管路转向45°建模。
+              蹦床仅支持2×2根（70×70cm）的完整边框。平台随完整边框显示，吊环随横梁定位，仅作参考。35/15cm按管轴长建模，未计入接头外壳与插入量。45接头按管路转向45°建模。
             </p>
             <div class="editor-row"><button id="new-design">新建空白</button><button id="roof-example">屋顶示例</button></div>
             <button id="restore-reference">恢复参考图</button>
@@ -742,32 +742,30 @@
           { a: [0, 0, 2], b: [1, 0, 2], group: "低平台边框", id: "P049", start: "J023", end: "J024" },
           { a: [0, 1, 2], b: [1, 1, 2], group: "低平台边框", id: "P050", start: "J027", end: "J028" },
           { a: [0, 0, 2], b: [0, 1, 2], group: "低平台边框", id: "P051", start: "J023", end: "J027" },
-          { a: [1, 0, 2], b: [1, 1, 2], group: "低平台边框", id: "P052", start: "J024", end: "J028" },
           { a: [0, 1, 3], b: [1, 1, 3], group: "高平台边框", id: "P053", start: "J036", end: "J037" },
           { a: [0, 2, 3], b: [1, 2, 3], group: "高平台边框", id: "P054", start: "J038", end: "J039" },
           { a: [0, 1, 3], b: [0, 2, 3], group: "高平台边框", id: "P055", start: "J036", end: "J038" },
-          { a: [1, 1, 3], b: [1, 2, 3], group: "高平台边框", id: "P056", start: "J037", end: "J039" },
           { a: [0, 0, 3], b: [0, 1, 3], group: "低平台护栏", id: "P057", start: "J034", end: "J036" },
           { a: [0, 1, 4], b: [1, 1, 4], group: "高平台护栏", id: "P058", start: "J043", end: "J044" },
           { a: [0, 2, 4], b: [1, 2, 4], group: "高平台护栏", id: "P059", start: "J046", end: "J047" },
           { a: [0, 1, 4], b: [0, 2, 4], group: "高平台护栏", id: "P060", start: "J043", end: "J046" },
-          { a: [1, 0, 1], b: [2, 0, 1], group: "蹦床边框", id: "P061", start: "J013", end: "J014" },
+          { a: [1, 0, 1], b: [2, 0, 1], group: "平台支撑", id: "P061", start: "J013", end: "J014" },
           { a: [2, 0, 1], b: [3, 0, 1], group: "蹦床边框", id: "P062", start: "J014", end: "J015" },
-          { a: [1, 2, 1], b: [2, 2, 1], group: "蹦床边框", id: "P063", start: "J020", end: "J021" },
+          { a: [1, 2, 1], b: [2, 2, 1], group: "平台支撑", id: "P063", start: "J020", end: "J021" },
           { a: [2, 2, 1], b: [3, 2, 1], group: "蹦床边框", id: "P064", start: "J021", end: "J022" },
-          { a: [1, 0, 1], b: [1, 1, 1], group: "蹦床边框", id: "P065", start: "J013", end: "J017" },
-          { a: [1, 1, 1], b: [1, 2, 1], group: "蹦床边框", id: "P066", start: "J017", end: "J020" },
+          { a: [1, 0, 1], b: [1, 1, 1], group: "平台支撑", id: "P065", start: "J013", end: "J017" },
+          { a: [1, 1, 1], b: [1, 2, 1], group: "平台支撑", id: "P066", start: "J017", end: "J020" },
           { a: [4, 0, 1], b: [4, 1, 1], group: "蹦床边框", id: "P067", start: "J053", end: "J059" },
           { a: [4, 1, 1], b: [4, 2, 1], group: "蹦床边框", id: "P068", start: "J059", end: "J055" },
           { a: [4, 0, 2], b: [4, 1, 2], group: "蹦床侧栏", id: "P069", start: "J054", end: "J060" },
           { a: [4, 1, 2], b: [4, 2, 2], group: "蹦床侧栏", id: "P070", start: "J060", end: "J056" },
-          { a: [1, 2, 4], b: [2, 2, 4], group: "蹦床后栏", id: "P071", start: "J047", end: "J048" },
+          { a: [1, 2, 4], b: [2, 2, 4], group: "高平台护栏", id: "P071", start: "J047", end: "J048" },
           { a: [2, 2, 4], b: [3, 2, 4], group: "蹦床后栏", id: "P072", start: "J048", end: "J049" },
-          { a: [1, 0, 2], b: [2, 0, 2], group: "蹦床前栏", id: "P073", start: "J024", end: "J025" },
+          { a: [1, 0, 2], b: [2, 0, 2], group: "低平台边框", id: "P073", start: "J024", end: "J025" },
           { a: [2, 0, 2], b: [3, 0, 2], group: "蹦床前栏", id: "P074", start: "J025", end: "J026" },
-          { a: [1, 1, 2], b: [1, 2, 2], group: "爬梯横档", id: "P075", start: "J028", end: "J031" },
-          { a: [2, 0, 4], b: [2, 1, 4], group: "吊环横梁", id: "P076", start: "J042", end: "J045" },
-          { a: [2, 1, 4], b: [2, 2, 4], group: "吊环横梁", id: "P077", start: "J045", end: "J048" },
+          { a: [1, 1, 2], b: [1, 2, 2], group: "平台支撑", id: "P075", start: "J028", end: "J031" },
+          { a: [2, 0, 4], b: [2, 1, 4], group: "顶部框架", id: "P076", start: "J042", end: "J045" },
+          { a: [2, 1, 4], b: [2, 2, 4], group: "顶部框架", id: "P077", start: "J045", end: "J048" },
           { a: [1, 1, 4], b: [1, 2, 4], group: "顶部框架", id: "P078", start: "J044", end: "J047" },
           { a: [1, 1, 4], b: [2, 1, 4], group: "顶部连接横杆", id: "P079", start: "J044", end: "J045" },
           { a: [3, 0, 0], b: [4, 0, 0], group: "底座", id: "P080", start: "J004", end: "J050" },
@@ -784,17 +782,32 @@
           { a: [3, 2, 1], b: [3, 2, 2], group: "立柱", id: "P091", start: "J022", end: "J033" },
           { a: [3, 2, 2], b: [3, 2, 3], group: "立柱", id: "P092", start: "J033", end: "J041" },
           { a: [3, 2, 3], b: [3, 2, 4], group: "立柱", id: "P093", start: "J041", end: "J049" },
-          { a: [3, 0, 4], b: [3, 1, 4], group: "顶部框架", id: "P094", start: "J062", end: "J063" },
-          { a: [3, 1, 4], b: [3, 2, 4], group: "顶部框架", id: "P095", start: "J063", end: "J049" }
+          { a: [3, 0, 4], b: [3, 1, 4], group: "吊环横梁", id: "P094", start: "J062", end: "J063" },
+          { a: [3, 1, 4], b: [3, 2, 4], group: "吊环横梁", id: "P095", start: "J063", end: "J049" },
+          { a: [1, 1, 2], b: [2, 1, 2], group: "低平台边框", id: "P096", start: "J028", end: "J064" },
+          { a: [2, 0, 2], b: [2, 1, 2], group: "低平台边框", id: "P097", start: "J025", end: "J064" },
+          { a: [1, 1, 3], b: [2, 1, 3], group: "高平台边框", id: "P098", start: "J037", end: "J065" },
+          { a: [1, 2, 3], b: [2, 2, 3], group: "高平台边框", id: "P099", start: "J039", end: "J040" },
+          { a: [2, 1, 3], b: [2, 2, 3], group: "高平台边框", id: "P100", start: "J065", end: "J040" },
+          { a: [2, 0, 1], b: [2, 1, 1], group: "蹦床边框", id: "P101", start: "J014", end: "J066" },
+          { a: [2, 1, 1], b: [2, 2, 1], group: "蹦床边框", id: "P102", start: "J066", end: "J021" },
+          { a: [2, 1, 2], b: [2, 2, 2], group: "爬梯横档", id: "P103", start: "J064", end: "J032" },
+          { a: [2, 0, 0], b: [2, 1, 0], group: "底座", id: "P104", start: "J003", end: "J067" },
+          { a: [2, 1, 0], b: [2, 2, 0], group: "底座", id: "P105", start: "J067", end: "J010" },
+          { a: [2, 1, 0], b: [2, 1, 1], group: "立柱", id: "P106", start: "J067", end: "J066" },
+          { a: [2, 1, 1], b: [2, 1, 2], group: "立柱", id: "P107", start: "J066", end: "J064" },
+          { a: [2, 1, 2], b: [2, 1, 3], group: "立柱", id: "P108", start: "J064", end: "J065" },
+          { a: [2, 1, 3], b: [2, 1, 4], group: "立柱", id: "P109", start: "J065", end: "J045" },
+          { a: [2, 1, 4], b: [3, 1, 4], group: "顶部连接横杆", id: "P110", start: "J045", end: "J063" }
         ],
         joints: [
           { id: "J001", p: [0, 0, 0], ports: ["+X", "+Y", "+Z"], pipes: ["P001", "P007", "P014"], type: "三向接头" },
           { id: "J002", p: [1, 0, 0], ports: ["-X", "+X", "+Y", "+Z"], pipes: ["P001", "P002", "P011", "P025"], type: "四向接头" },
-          { id: "J003", p: [2, 0, 0], ports: ["-X", "+X", "+Z"], pipes: ["P002", "P003", "P035"], type: "T形接头" },
+          { id: "J003", p: [2, 0, 0], ports: ["-X", "+X", "+Z", "+Y"], pipes: ["P002", "P003", "P035", "P104"], type: "四向接头" },
           { id: "J004", p: [3, 0, 0], ports: ["-X", "+X", "+Z"], pipes: ["P003", "P080", "P086"], type: "T形接头" },
           { id: "J008", p: [0, 2, 0], ports: ["+X", "-Y", "+Z"], pipes: ["P004", "P008", "P021"], type: "三向接头" },
           { id: "J009", p: [1, 2, 0], ports: ["-X", "+X", "-Y", "+Z"], pipes: ["P004", "P005", "P012", "P031"], type: "四向接头" },
-          { id: "J010", p: [2, 2, 0], ports: ["-X", "+X", "+Z"], pipes: ["P005", "P006", "P039"], type: "T形接头" },
+          { id: "J010", p: [2, 2, 0], ports: ["-X", "+X", "+Z", "-Y"], pipes: ["P005", "P006", "P039", "P105"], type: "四向接头" },
           { id: "J011", p: [3, 2, 0], ports: ["-X", "+X", "+Z"], pipes: ["P006", "P081", "P090"], type: "T形接头" },
           { id: "J005", p: [0, 1, 0], ports: ["-Y", "+Y", "+X", "+Z"], pipes: ["P007", "P008", "P013", "P017"], type: "四向接头" },
           { id: "J050", p: [4, 0, 0], ports: ["+Y", "+Z", "-X"], pipes: ["P009", "P043", "P080"], type: "三向接头" },
@@ -813,22 +826,22 @@
           { id: "J038", p: [0, 2, 3], ports: ["-Z", "+Z", "+X", "-Y"], pipes: ["P023", "P024", "P054", "P055"], type: "四向接头" },
           { id: "J046", p: [0, 2, 4], ports: ["-Z", "+X", "-Y"], pipes: ["P024", "P059", "P060"], type: "三向接头" },
           { id: "J013", p: [1, 0, 1], ports: ["-Z", "+Z", "+X", "+Y"], pipes: ["P025", "P026", "P061", "P065"], type: "四向接头" },
-          { id: "J024", p: [1, 0, 2], ports: ["-Z", "-X", "+Y", "+X"], pipes: ["P026", "P049", "P052", "P073"], type: "四向接头" },
+          { id: "J024", p: [1, 0, 2], ports: ["-Z", "-X", "+X"], pipes: ["P026", "P049", "P073"], type: "T形接头" },
           { id: "J017", p: [1, 1, 1], ports: ["-Z", "+Z", "-Y", "+Y"], pipes: ["P027", "P028", "P065", "P066"], type: "十字接头" },
-          { id: "J028", p: [1, 1, 2], ports: ["-Z", "+Z", "-X", "-Y", "+Y"], pipes: ["P028", "P029", "P050", "P052", "P075"], type: "五向接头" },
-          { id: "J037", p: [1, 1, 3], ports: ["-Z", "+Z", "-X", "+Y"], pipes: ["P029", "P030", "P053", "P056"], type: "四向接头" },
+          { id: "J028", p: [1, 1, 2], ports: ["-Z", "+Z", "-X", "+Y", "+X"], pipes: ["P028", "P029", "P050", "P075", "P096"], type: "五向接头" },
+          { id: "J037", p: [1, 1, 3], ports: ["-Z", "+Z", "-X", "+X"], pipes: ["P029", "P030", "P053", "P098"], type: "十字接头" },
           { id: "J044", p: [1, 1, 4], ports: ["-Z", "-X", "+Y", "+X"], pipes: ["P030", "P058", "P078", "P079"], type: "四向接头" },
           { id: "J020", p: [1, 2, 1], ports: ["-Z", "+Z", "+X", "-Y"], pipes: ["P031", "P032", "P063", "P066"], type: "四向接头" },
           { id: "J031", p: [1, 2, 2], ports: ["-Z", "+Z", "-Y"], pipes: ["P032", "P033", "P075"], type: "T形接头" },
-          { id: "J039", p: [1, 2, 3], ports: ["-Z", "+Z", "-X", "-Y"], pipes: ["P033", "P034", "P054", "P056"], type: "四向接头" },
+          { id: "J039", p: [1, 2, 3], ports: ["-Z", "+Z", "-X", "+X"], pipes: ["P033", "P034", "P054", "P099"], type: "十字接头" },
           { id: "J047", p: [1, 2, 4], ports: ["-Z", "-X", "+X", "-Y"], pipes: ["P034", "P059", "P071", "P078"], type: "四向接头" },
-          { id: "J014", p: [2, 0, 1], ports: ["-Z", "+Z", "-X", "+X"], pipes: ["P035", "P036", "P061", "P062"], type: "十字接头" },
-          { id: "J025", p: [2, 0, 2], ports: ["-Z", "+Z", "-X", "+X"], pipes: ["P036", "P037", "P073", "P074"], type: "十字接头" },
+          { id: "J014", p: [2, 0, 1], ports: ["-Z", "+Z", "-X", "+X", "+Y"], pipes: ["P035", "P036", "P061", "P062", "P101"], type: "五向接头" },
+          { id: "J025", p: [2, 0, 2], ports: ["-Z", "+Z", "-X", "+X", "+Y"], pipes: ["P036", "P037", "P073", "P074", "P097"], type: "五向接头" },
           { id: "J035", p: [2, 0, 3], ports: ["-Z", "+Z"], pipes: ["P037", "P038"], type: "一字接头" },
           { id: "J042", p: [2, 0, 4], ports: ["-Z", "+Y"], pipes: ["P038", "P076"], type: "转角接头" },
-          { id: "J021", p: [2, 2, 1], ports: ["-Z", "+Z", "-X", "+X"], pipes: ["P039", "P040", "P063", "P064"], type: "十字接头" },
-          { id: "J032", p: [2, 2, 2], ports: ["-Z", "+Z"], pipes: ["P040", "P041"], type: "一字接头" },
-          { id: "J040", p: [2, 2, 3], ports: ["-Z", "+Z"], pipes: ["P041", "P042"], type: "一字接头" },
+          { id: "J021", p: [2, 2, 1], ports: ["-Z", "+Z", "-X", "+X", "-Y"], pipes: ["P039", "P040", "P063", "P064", "P102"], type: "五向接头" },
+          { id: "J032", p: [2, 2, 2], ports: ["-Z", "+Z", "-Y"], pipes: ["P040", "P041", "P103"], type: "T形接头" },
+          { id: "J040", p: [2, 2, 3], ports: ["-Z", "+Z", "-X", "-Y"], pipes: ["P041", "P042", "P099", "P100"], type: "四向接头" },
           { id: "J048", p: [2, 2, 4], ports: ["-Z", "-X", "+X", "-Y"], pipes: ["P042", "P071", "P072", "P077"], type: "四向接头" },
           { id: "J053", p: [4, 0, 1], ports: ["-Z", "+Z", "+Y", "-X"], pipes: ["P043", "P044", "P067", "P082"], type: "四向接头" },
           { id: "J054", p: [4, 0, 2], ports: ["-Z", "+Y", "-X"], pipes: ["P044", "P069", "P085"], type: "三向接头" },
@@ -842,14 +855,18 @@
           { id: "J060", p: [4, 1, 2], ports: ["-Y", "+Y"], pipes: ["P069", "P070"], type: "一字接头" },
           { id: "J049", p: [3, 2, 4], ports: ["-X", "+X", "-Z", "-Y"], pipes: ["P072", "P084", "P093", "P095"], type: "四向接头" },
           { id: "J026", p: [3, 0, 2], ports: ["-X", "+X", "-Z", "+Z"], pipes: ["P074", "P085", "P087", "P088"], type: "十字接头" },
-          { id: "J045", p: [2, 1, 4], ports: ["-Y", "+Y", "-X"], pipes: ["P076", "P077", "P079"], type: "T形接头" },
+          { id: "J045", p: [2, 1, 4], ports: ["-Y", "+Y", "-X", "-Z", "+X"], pipes: ["P076", "P077", "P079", "P109", "P110"], type: "五向接头" },
           { id: "J061", p: [3, 0, 3], ports: ["-Z", "+Z"], pipes: ["P088", "P089"], type: "一字接头" },
           { id: "J062", p: [3, 0, 4], ports: ["-Z", "+Y"], pipes: ["P089", "P094"], type: "转角接头" },
           { id: "J033", p: [3, 2, 2], ports: ["-Z", "+Z"], pipes: ["P091", "P092"], type: "一字接头" },
           { id: "J041", p: [3, 2, 3], ports: ["-Z", "+Z"], pipes: ["P092", "P093"], type: "一字接头" },
-          { id: "J063", p: [3, 1, 4], ports: ["-Y", "+Y"], pipes: ["P094", "P095"], type: "一字接头" }
+          { id: "J063", p: [3, 1, 4], ports: ["-Y", "+Y", "-X"], pipes: ["P094", "P095", "P110"], type: "T形接头" },
+          { id: "J064", p: [2, 1, 2], ports: ["-X", "-Y", "+Y", "-Z", "+Z"], pipes: ["P096", "P097", "P103", "P107", "P108"], type: "五向接头" },
+          { id: "J065", p: [2, 1, 3], ports: ["-X", "+Y", "-Z", "+Z"], pipes: ["P098", "P100", "P108", "P109"], type: "四向接头" },
+          { id: "J066", p: [2, 1, 1], ports: ["-Y", "+Y", "-Z", "+Z"], pipes: ["P101", "P102", "P106", "P107"], type: "十字接头" },
+          { id: "J067", p: [2, 1, 0], ports: ["-Y", "+Y", "+Z"], pipes: ["P104", "P105", "P106"], type: "T形接头" }
         ],
-        counts: {"三向接头":7,"四向接头":18,"T形接头":7,"一字接头":15,"转角接头":4,"五向接头":2,"十字接头":7}
+        counts: {"三向接头":7,"四向接头":19,"T形接头":8,"一字接头":12,"转角接头":4,"五向接头":7,"十字接头":7}
       };
       const canvas = document.getElementById("scene");
       const gl = canvas.getContext("webgl", { antialias: true, alpha: false, preserveDrawingBuffer: true });
@@ -1042,18 +1059,24 @@
         }
         return { min, max, z };
       }
+      function hangingRingAnchors() {
+        const pipes = model.pipes.filter(pipe => pipe.group === "吊环横梁");
+        if (!pipes.length) return [];
+        const x = pipes[0].a[0], z = pipes[0].a[2];
+        if (pipes.some(pipe => [pipe.a, pipe.b].some(p => Math.abs(p[0] - x) > 0.000001 || Math.abs(p[2] - z) > 0.000001))) return [];
+        const intervals = pipes.map(pipe => [Math.min(pipe.a[1], pipe.b[1]), Math.max(pipe.a[1], pipe.b[1])]);
+        const min = Math.min(...intervals.map(pair => pair[0])), max = Math.max(...intervals.map(pair => pair[1]));
+        if (max - min < 0.5 || !coversIntervals(intervals, min, max)) return [];
+        return (max - min >= 1.5 ? [0.425, 0.725] : [0.5]).map(fraction => [x, min + (max - min) * fraction, z]);
+      }
       function accessoryLayout() {
         const platforms = [
           { frame: rectangularAccessoryFrame("低平台边框"), color: [0.98, 0.75, 0.13] },
           { frame: rectangularAccessoryFrame("高平台边框"), color: [0.91, 0.14, 0.2] }
         ].filter(platform => platform.frame);
-        const trampoline = rectangularAccessoryFrame("蹦床边框");
-        const rings = [0.85, 1.45].map(y => [2, y, 4]).filter(anchor => model.pipes.some(pipe => {
-          if (pipe.group !== "吊环横梁") return false;
-          const direction = sub(pipe.b, pipe.a);
-          const t = dot(sub(anchor, pipe.a), direction) / dot(direction, direction);
-          return t >= -0.000001 && t <= 1.000001 && Math.hypot(...sub(anchor, add(pipe.a, mul(direction, t)))) < 0.000001;
-        }));
+        const frame = rectangularAccessoryFrame("蹦床边框");
+        const trampoline = frame && frame.max.every((value, axis) => Math.abs(value - frame.min[axis] - 2) < 0.000001) ? frame : null;
+        const rings = hangingRingAnchors();
         const bounds = [];
         for (const frame of [...platforms.map(p => p.frame), trampoline].filter(Boolean))
           bounds.push([...frame.min, frame.z - 0.02], [...frame.max, frame.z + 0.025]);
@@ -1764,7 +1787,10 @@
           : `当前跨度：长${cm[0]} × 宽${cm[1]} × 高${cm[2]} cm`;
       }
       function refreshEditor() {
-        $("model-summary").textContent = modelDimensionSummary();
+        const trampoline = rectangularAccessoryFrame("蹦床边框");
+        const trampolineSpan = trampoline && trampoline.max.map((value, axis) => Number((value - trampoline.min[axis]).toFixed(2)));
+        $("model-summary").textContent = modelDimensionSummary() + (trampolineSpan
+          ? ` · 蹦床${trampolineSpan.join("×")}根${trampolineSpan.every(value => value === 2) ? "" : "（仅支持2×2）"}` : "");
         $("counts").textContent = `${model.pipes.length}根管 · ${model.joints.length}个接头`;
         $("length-counts").textContent = `35cm：${model.pipes.filter(p => pipeLength(p) === 35).length}根　15cm：${
           model.pipes.filter(p => pipeLength(p) === 15).length
@@ -2061,7 +2087,7 @@
       function loadReferenceModel() {
         commit(referencePipes, {}, "", true);
         setView("perspective");
-        report("已载入长4×宽2×高4根的默认模型，当前方案可撤销恢复。");
+        report("已载入整体4×2×4根、蹦床2×2根的默认模型，当前方案可撤销恢复。");
       }
       $("restore-reference").addEventListener("click", () => safely(loadReferenceModel));
       $("load-default").addEventListener("click", () => safely(loadReferenceModel));
@@ -2303,15 +2329,18 @@
 
       const draftStorageKey = hasEmbeddedDesign || draftIdentity
         ? "climbing-frame-draft-v1:" + location.pathname + (draftIdentity ? ":" + draftIdentity : "")
-        : "climbing-frame-draft-v2:reference-4x2:" + location.pathname;
-      const legacyDraftStorageKey = "climbing-frame-draft-v1:" + location.pathname;
+        : "climbing-frame-draft-v3:reference-4x2-trampoline-2x2:" + location.pathname;
+      const legacyDraftStorageKeys = [
+        "climbing-frame-draft-v2:reference-4x2:" + location.pathname,
+        "climbing-frame-draft-v1:" + location.pathname
+      ];
       let recoverableDraft = null;
       let recoverableDraftKey = "";
       function saveLocalDraft() {
         try {
           localStorage.setItem(
             draftStorageKey,
-            JSON.stringify({ savedAt: new Date().toISOString(), referenceRevision: 2, design: serializedDesign() })
+            JSON.stringify({ savedAt: new Date().toISOString(), referenceRevision: 3, design: serializedDesign() })
           );
           $("draft-status").textContent = "已自动保存到当前浏览器 · 不会跨设备同步";
           recoverableDraft = null;
@@ -2329,8 +2358,14 @@
           let sourceKey = draftStorageKey;
           let raw = localStorage.getItem(sourceKey);
           if (!raw && !hasEmbeddedDesign && !draftIdentity) {
-            sourceKey = legacyDraftStorageKey;
-            raw = localStorage.getItem(sourceKey);
+            for (const legacyKey of legacyDraftStorageKeys) {
+              const legacyRaw = localStorage.getItem(legacyKey);
+              if (legacyRaw) {
+                sourceKey = legacyKey;
+                raw = legacyRaw;
+                break;
+              }
+            }
           }
           if (!raw) {
             $("draft-status").textContent = "编辑后自动保存本地草稿；跨设备请导出文件。";
@@ -2346,8 +2381,8 @@
           }
           recoverableDraft = stored.design;
           recoverableDraftKey = sourceKey;
-          $("draft-status").textContent = sourceKey === legacyDraftStorageKey && !hasEmbeddedDesign
-            ? "当前显示新版长4×宽2默认模型；旧版草稿保留，可手动恢复。"
+          $("draft-status").textContent = sourceKey !== draftStorageKey && !hasEmbeddedDesign
+            ? "当前显示整体4×2、蹦床2×2默认模型；旧版草稿保留，可手动恢复。"
             : "发现本地草稿，可恢复继续编辑；当前模型尚未替换。";
           $("draft-recovery").hidden = false;
         } catch {

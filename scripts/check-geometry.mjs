@@ -93,3 +93,17 @@ while (changed) {
 }
 assert.equal(visited.size, reference.pipes.length, "默认模型的新增跨度必须与原架连通");
 console.log("检查通过：默认4×2×4管跨度、35cm分段、底座连续连接、中间立柱和接头连通。");
+
+for (const [group, min, max] of [
+  ["低平台边框", [0, 0, 2], [2, 1, 2]],
+  ["高平台边框", [0, 1, 3], [2, 2, 3]],
+  ["蹦床边框", [2, 0, 1], [4, 2, 1]]
+]) {
+  const points = reference.pipes.filter(p => p.group === group).flatMap(p => [p.a, p.b]);
+  assert.deepEqual([0, 1, 2].map(axis => Math.min(...points.map(p => p[axis]))), min, group + "起点错误");
+  assert.deepEqual([0, 1, 2].map(axis => Math.max(...points.map(p => p[axis]))), max, group + "终点错误");
+}
+assert.equal(reference.pipes.filter(p => p.group === "蹦床边框").length, 8, "2×2蹦床四边应由8根35cm管闭合");
+const hangingBeams = reference.pipes.filter(p => p.group === "吊环横梁");
+assert.ok(hangingBeams.length && hangingBeams.every(p => p.a[0] === 3 && p.b[0] === 3), "吊环梁应在2×2蹦床的中心x=3");
+console.log("检查通过：两层2×1平台、右侧独立2×2蹦床、8根边框管和居中吊环梁。");

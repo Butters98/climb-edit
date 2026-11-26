@@ -10,12 +10,15 @@ const referenceContext = {};
 runInNewContext(source.slice(source.indexOf("      let model ="), source.indexOf("      const canvas =")) + "this.pipes = model.pipes;", referenceContext);
 const plain = value => JSON.parse(JSON.stringify(value));
 const referencePipes = plain(referenceContext.pipes);
+const previousReferencePipes = JSON.parse(await readFile(new URL("./fixtures/reference-4x2-trampoline-3x2.json", import.meta.url), "utf8")).pipes;
 const storage = new Map();
 const legacyKey = "climbing-frame-draft-v1:/index.html";
-const currentKey = "climbing-frame-draft-v2:reference-4x2:/index.html";
+const previousKey = "climbing-frame-draft-v2:reference-4x2:/index.html";
+const currentKey = "climbing-frame-draft-v3:reference-4x2-trampoline-2x2:/index.html";
 const cmDesign = pipes => ({ version: 1, units: "cm", connectors: {}, showAccessories: true,
   pipes: pipes.map(p => ({ id: p.id, group: p.group, a: p.a.map(v => v * 35), b: p.b.map(v => v * 35) })) });
-const legacy = cmDesign(referencePipes.filter(p => Number(p.id.slice(1)) <= 79).map(p => ({ ...p,
+const previousDefault = cmDesign(previousReferencePipes);
+const legacy = cmDesign(previousReferencePipes.filter(p => Number(p.id.slice(1)) <= 79).map(p => ({ ...p,
   a: p.a.map((v, axis) => axis === 0 && v === 4 ? 3 : v),
   b: p.b.map((v, axis) => axis === 0 && v === 4 ? 3 : v)
 })));
@@ -56,9 +59,11 @@ function openPage({ embedded = false, identity = "", blocked = false, initialSta
   return { context, elements, ...context.actions, click: id => elements[id].events.click() };
 }
 const assertCurrentDefault = page => {
-  assert.equal(page.context.model.pipes.length, 95, "旧版草稿不能覆盖新版95管默认模型");
+  assert.equal(page.context.model.pipes.length, 108, "旧版草稿不能覆盖新版108管默认模型");
   const points = page.context.model.pipes.flatMap(p => [p.a, p.b]);
   assert.deepEqual([0, 1, 2].map(axis => Math.max(...points.map(p => p[axis])) - Math.min(...points.map(p => p[axis]))), [4, 2, 4]);
+  const trampoline = page.context.model.pipes.filter(p => p.group === "蹦床边框").flatMap(p => [p.a, p.b]);
+  assert.deepEqual([0, 1].map(axis => Math.max(...trampoline.map(p => p[axis])) - Math.min(...trampoline.map(p => p[axis]))), [2, 2], "新默认蹦床边框只能为2×2");
 };
 
 const empty = openPage();
@@ -68,6 +73,8 @@ assert.equal(empty.elements["draft-recovery"].hidden, true);
 empty.saveLocalDraft();
 assert.ok(storage.has(currentKey), "新版默认入口必须保存到独立命名空间");
 assert.equal(storage.has(legacyKey), false);
+assert.equal(storage.has(previousKey), false);
+assert.equal(JSON.parse(storage.get(currentKey)).referenceRevision, 3);
 const saved = storage.get(currentKey);
 const refreshed = openPage();
 refreshed.readLocalDraft();
@@ -75,26 +82,45 @@ assertCurrentDefault(refreshed);
 assert.equal(storage.get(currentKey), saved, "自动恢复不应改写草稿");
 console.log("检查通过：新版草稿独立保存与刷新恢复。");
 
-for (const variant of [
-  { design: legacy },
-  { design: legacy, referenceRevision: 2 },
-  { design: { ...legacy, pipes: legacy.pipes.map((p, i) => i ? p : { ...p, group: "自定义", id: "P999" }) }, referenceRevision: 2 },
-  { design: { ...legacy, showAccessories: false, connectors: { "0.0000,0.0000,0.0000": "一字接头" } }, referenceRevision: 2 }
-]) {
-  storage.clear();
-  const { design, ...extra } = variant;
-  const raw = put(legacyKey, design, extra);
-  const page = openPage();
-  page.readLocalDraft();
-  assertCurrentDefault(page);
-  assert.equal(page.context.restored, undefined, "旧版只能提供恢复入口，不应自动加载");
-  assert.equal(page.elements["draft-recovery"].hidden, false);
-  assert.deepEqual(plain(page.getRecoverableDraft()), design);
-  assert.equal(page.getRecoverableDraftKey(), legacyKey);
-  assert.equal(storage.get(legacyKey), raw, "旧草稿须原值保留");
-  assert.equal(storage.has(currentKey), false, "仅打开页面不应写入任何草稿");
+for (const [key, base] of [[legacyKey, legacy], [previousKey, previousDefault]]) {
+  for (const variant of [
+    { design: base },
+    { design: base, referenceRevision: 2 },
+    { design: { ...base, pipes: base.pipes.map((p, i) => i ? p : { ...p, group: "自定义", id: "P999" }) }, referenceRevision: 2 },
+    { design: { ...base, showAccessories: false, connectors: { "0.0000,0.0000,0.0000": "一字接头" } }, referenceRevision: 2 }
+  ]) {
+    storage.clear();
+    const { design, ...extra } = variant;
+    const raw = put(key, design, extra);
+    const page = openPage();
+    page.readLocalDraft();
+    assertCurrentDefault(page);
+    assert.equal(page.context.restored, undefined, "旧版只能提供恢复入口，不应自动加载");
+    assert.equal(page.elements["draft-recovery"].hidden, false);
+    assert.deepEqual(plain(page.getRecoverableDraft()), design);
+    assert.equal(page.getRecoverableDraftKey(), key);
+    assert.equal(storage.get(key), raw, "旧草稿须原值保留");
+    assert.equal(storage.has(currentKey), false, "仅打开页面不应写入任何草稿");
+  }
 }
-console.log("检查通过：原版、revision:2、改组别/编号和修改设置的旧草稿均不覆盖4×2默认。");
+console.log("检查通过：旧v1与v2草稿、revision:2及自定义改动均不覆盖整体4×2、蹦床2×2默认。");
+
+storage.clear();
+const olderRaw = put(legacyKey, legacy);
+const previousRaw = put(previousKey, previousDefault, { referenceRevision: 2 });
+const priority = openPage();
+priority.readLocalDraft();
+assertCurrentDefault(priority);
+assert.equal(priority.getRecoverableDraftKey(), previousKey, "旧v2工作副本应优先于更旧的v1草稿提供恢复");
+assert.deepEqual(plain(priority.getRecoverableDraft()), previousDefault);
+priority.click("restore-draft");
+assert.equal(priority.context.model.pipes.length, 95, "用户主动选择旧v2方案应成功");
+assert.equal(storage.get(previousKey), previousRaw);
+assert.equal(storage.get(legacyKey), olderRaw);
+const previousRestored = openPage();
+previousRestored.readLocalDraft();
+assert.deepEqual(plain(previousRestored.context.restored), internalState(previousDefault), "主动恢复旧v2后刷新须保留用户选择");
+console.log("检查通过：旧v2优先恢复入口、旧v1保留，以及主动恢复后的同版刷新。");
 
 storage.clear();
 const oldRaw = put(legacyKey, legacy, { referenceRevision: 2 });
@@ -117,20 +143,31 @@ manualReloaded.readLocalDraft();
 assert.deepEqual(plain(manualReloaded.context.restored), internalState(legacy), "主动恢复旧方案后刷新须保持用户选择");
 console.log("检查通过：同版自定义草稿恢复、手动恢复旧方案及再次刷新。");
 
+for (const [key, oldDesign] of [[legacyKey, legacy], [previousKey, previousDefault]]) {
+  storage.clear();
+  put(key, oldDesign);
+  const discard = openPage();
+  discard.readLocalDraft();
+  const newerRaw = put(currentKey, custom);
+  discard.click("discard-draft");
+  assert.equal(storage.has(key), false, "删除恢复项应删除该项所在的旧键");
+  assert.equal(storage.get(currentKey), newerRaw, "删除旧草稿不能误删其他标签新写入的新版草稿");
+  assertCurrentDefault(discard);
+  assert.equal(discard.elements["draft-recovery"].hidden, true);
+}
 storage.clear();
 put(legacyKey, legacy);
-const discard = openPage();
-discard.readLocalDraft();
-const newerRaw = put(currentKey, custom);
-discard.click("discard-draft");
-assert.equal(storage.has(legacyKey), false, "删除恢复项应删除该项所在的旧键");
-assert.equal(storage.get(currentKey), newerRaw, "删除旧草稿不能误删其他标签新写入的新版草稿");
-assertCurrentDefault(discard);
-assert.equal(discard.elements["draft-recovery"].hidden, true);
-console.log("检查通过：删除恢复项按来源键执行，保留新版草稿和当前模型。");
+put(previousKey, previousDefault);
+const discardPrevious = openPage();
+discardPrevious.readLocalDraft();
+discardPrevious.click("discard-draft");
+assert.equal(storage.has(previousKey), false);
+assert.ok(storage.has(legacyKey), "删除选中的v2草稿不得同时删除v1草稿");
+console.log("检查通过：删除恢复项按来源键执行，保留新版及其他旧版草稿和当前模型。");
 
 storage.clear();
 put(currentKey, custom);
+put(previousKey, previousDefault);
 put(legacyKey, custom);
 const embeddedState = internalState(legacy);
 const oldEmbedded = openPage({ embedded: true, initialState: embeddedState });
@@ -160,7 +197,7 @@ assertCurrentDefault(denied);
 assert.match(denied.elements["draft-status"].textContent, /不可用/);
 denied.saveLocalDraft();
 assert.match(denied.elements["draft-status"].textContent, /保存失败/);
-for (const key of [currentKey, legacyKey]) {
+for (const key of [currentKey, previousKey, legacyKey]) {
   for (const raw of ["invalid json", JSON.stringify({ design: { version: 999 } }), "x".repeat(1024 * 1024 + 1)]) {
     storage.clear();
     storage.set(key, raw);

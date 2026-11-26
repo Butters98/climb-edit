@@ -162,14 +162,15 @@ adding.referencePipes = referenceFixture.pipes;
 runInNewContext(section("      function modelDimensionSummary()", "      function refreshEditor()") +
   section("      function loadReferenceModel()", '      $("roof-example").addEventListener') +
   "this.dimensions = modelDimensionSummary;", adding);
-const oldReference = referenceFixture.pipes.filter(p => Number(p.id.slice(1)) <= 79).map(p => ({ ...p,
+const previousFixture = JSON.parse(await readFile(new URL("./fixtures/reference-4x2-trampoline-3x2.json", import.meta.url), "utf8"));
+const oldReference = previousFixture.pipes.filter(p => Number(p.id.slice(1)) <= 79).map(p => ({ ...p,
   a: p.a.map((v, axis) => axis === 0 && v === 4 ? 3 : v),
   b: p.b.map((v, axis) => axis === 0 && v === 4 ? 3 : v)
 }));
 adding.model = adding.construct(oldReference);
 assert.match(adding.dimensions(), /当前长3 × 宽2 × 高4根/, "尺寸提示必须反映实际旧模型");
 adding.$("load-default").click();
-assert.equal(adding.model.pipes.length, 95, "顶部载入默认按钮必须实际载入完整95管模型");
+assert.equal(adding.model.pipes.length, 108, "顶部载入默认按钮必须实际载入完整108管模型");
 assert.match(adding.dimensions(), /当前长4 × 宽2 × 高4根.*140 × 70 × 140 cm/, "点击后实际跨度必须变4×2×4");
 assert.equal(adding.lastAccessories, true);
 assert.equal(adding.lastView, "perspective");
