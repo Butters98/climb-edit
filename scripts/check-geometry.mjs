@@ -66,3 +66,30 @@ for (const direction of large.directions) {
 assert.equal(large.pairChecks - before, 499 * large.directions.length, "18个候选方向应只检查新增管对，避免重复验证旧管对");
 assert.throws(() => large.construct([...base, base[0], base[1]]), /最多支持500/);
 console.log(`检查通过：几何缓存、原地坐标变更、交叉与重叠、失败重试、接头兼容；499根管的18方向校验 ${Math.round(performance.now() - started)}ms。`);
+
+const referenceContext = {};
+runInNewContext(section("      let model =", "      const canvas =") + "this.reference = model;", referenceContext);
+const reference = referenceContext.reference;
+const referenceValidator = validator();
+const validated = referenceValidator.construct(reference.pipes);
+const endpoints = reference.pipes.flatMap(p => [p.a, p.b]);
+assert.deepEqual([0, 1, 2].map(axis => Math.max(...endpoints.map(p => p[axis])) - Math.min(...endpoints.map(p => p[axis]))), [4, 2, 4], "默认方案必须长4根、宽2根、高4根");
+assert.ok(reference.pipes.every(p => Math.abs(Math.hypot(...p.b.map((v, i) => v - p.a[i])) - 1) < 0.000001), "延长模型须增加35cm管，不能拉伸现有管子");
+for (const y of [0, 2]) {
+  const base = reference.pipes.filter(p => p.group === "底座" && p.a[1] === y && p.b[1] === y && p.a[2] === 0 && p.b[2] === 0);
+  assert.deepEqual(Array.from(base, p => Math.min(p.a[0], p.b[0])).sort((a, b) => a - b), [0, 1, 2, 3], "底座长边必须由4根管连续连接");
+  for (let z = 0; z < 4; z++) assert.ok(reference.pipes.some(p => p.group === "立柱" && p.a.join() === [3, y, z].join() && p.b.join() === [3, y, z + 1].join()), "新增跨度须保留中间立柱连接");
+}
+assert.equal(reference.joints.length, validated.joints.length, "默认接头数据应与管子连接一致");
+const byId = new Map(reference.pipes.map(p => [p.id, p]));
+for (const joint of reference.joints) {
+  for (const id of joint.pipes) assert.ok([byId.get(id).a, byId.get(id).b].some(p => p.join() === joint.p.join()), "接头引用的管子必须实际连接到该位置");
+}
+const visited = new Set([reference.pipes[0].id]);
+let changed = true;
+while (changed) {
+  changed = false;
+  for (const joint of reference.joints) if (joint.pipes.some(id => visited.has(id))) for (const id of joint.pipes) if (!visited.has(id)) { visited.add(id); changed = true; }
+}
+assert.equal(visited.size, reference.pipes.length, "默认模型的新增跨度必须与原架连通");
+console.log("检查通过：默认4×2×4管跨度、35cm分段、底座连续连接、中间立柱和接头连通。");

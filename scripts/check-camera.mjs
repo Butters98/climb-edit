@@ -72,7 +72,7 @@ assertFramed(context.model.joints.map(j => j.p));
 context.explosion = 0;
 context.showAccessories = true;
 context.setView("perspective");
-assertFramed([[0, 0, 0], [3, 2, 4]]);
+assertFramed([[0, 0, 0], [4, 2, 4]]);
 modelFrom([]);
 context.showAccessories = false;
 context.setView("front");
