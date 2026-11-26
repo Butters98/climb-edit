@@ -95,3 +95,62 @@ context.$("accessories").checked = true;
 context.$("accessories").change();
 assert.equal(context.committed.accessories, true, "附件切换须进入统一提交流程");
 console.log("检查通过：改长预览、取消、确认及附件历史提交。");
+
+// Exercise continuous addition with the real geometry checks and direction controls.
+const controls = new Map();
+const adding = {
+  model: { pipes: [], joints: [] }, partsById: new Map(), selectedId: "", pendingPipe: null,
+  $: id => {
+    if (!controls.has(id)) controls.set(id, { value: "", options: [], setAttribute() {}, addEventListener(type, handler) { this[type] = handler; } });
+    return controls.get(id);
+  },
+  document: { querySelectorAll: () => [] }, requestRender() {}, safely: action => action(), report() {},
+  commit(pipes, choices, selection) {
+    adding.model = adding.construct(pipes, choices);
+    adding.partsById = new Map([...adding.model.pipes, ...adding.model.joints].map(p => [p.id, p]));
+    adding.selectedId = selection;
+    adding.pendingPipe = null;
+    adding.sync(); // The editor refreshes selection during commit, before switching anchor.
+  }
+};
+runInNewContext(
+  section("      const add =", "      function matrixMultiply") +
+  section("      const jointCatalog =", "      let connectorChoices =") +
+  "let connectorChoices = {};\n" +
+  section("      function findConnector(", "      function report(") +
+  section("      function selectedAnchor(", "      function fitModel(") +
+  section("      function newPipeCandidate(", "      function previewNewPipe(") +
+  section("      function syncChoices()", '      for (const id of ["direction", "new-length"])') +
+  section('      $("confirm-add").addEventListener', '      $("cancel-add").addEventListener') +
+  "this.construct = constructModel; this.sync = syncChoices;", adding);
+adding.$("anchor").value = "start";
+adding.$("new-length").value = "35";
+adding.$("direction").value = "+Z";
+adding.$("direction").options = [{ value: "+Z" }, { value: "-Z" }];
+adding.pendingPipe = { id: "P001", a: [0, 0, 0], b: [0, 0, 1] };
+adding.$("confirm-add").click();
+assert.equal(adding.$("anchor").value, "end");
+assert.equal(adding.$("direction").options[0].disabled, false, "确认添加后末端向上应可立即继续接管");
+assert.equal(adding.$("direction").options[1].disabled, true, "末端反向重叠必须禁用");
+assert.equal(adding.$("add-pipe").disabled, false);
+assert.match(adding.$("add-origin").textContent, /P001 的终点 B.*35 cm/, "添加位置应展示新管末端坐标");
+adding.pendingPipe = { id: "P002", a: [0, 0, 1], b: [0, 0, 2] };
+adding.$("confirm-add").click();
+assert.equal(adding.model.pipes.length, 2);
+assert.equal(adding.$("add-pipe").disabled, false, "第二次确认后仍可继续向上");
+assert.match(adding.$("add-origin").textContent, /P002 的终点 B.*70 cm/);
+console.log("检查通过：连续接管的端点、方向可用性与添加位置提示同步。");
+
+adding.confirm = () => false;
+adding.setView = view => { adding.lastView = view; };
+adding.switchEditorTab = tab => { adding.lastTab = tab; };
+runInNewContext(section('      $("new-design").addEventListener', '      $("restore-reference").addEventListener'), adding);
+adding.$("new-design").click();
+assert.equal(adding.model.pipes.length, 2, "取消新建应保留当前方案");
+adding.confirm = () => true;
+adding.$("new-design").click();
+assert.equal(adding.model.pipes.length, 0);
+assert.equal(adding.lastTab, "add", "空白方案应直接进入添加管子");
+assert.equal(adding.lastView, "perspective", "新建空白须重置到原点取景");
+assert.match(adding.$("add-origin").textContent, /原点添加第一根管/);
+console.log("检查通过：隔离状态下的新建确认、取消、添加入口与视角复位。");

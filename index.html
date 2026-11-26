@@ -518,6 +518,14 @@
           font-size: 14px;
         }
       }
+      #add-origin {
+        padding: 9px 11px;
+        border-left: 3px solid var(--green);
+        border-radius: 6px;
+        background: #edf3ed;
+        color: var(--ink);
+        font-size: 12px;
+      }
       #model-markers { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
       #model-markers span { position:absolute; background:#fffefbe8; border:1px solid #28654e; border-radius:5px; padding:2px 5px; font-size:12px; color:#163f32; }
       #model-markers span:empty { display:none; }
@@ -614,6 +622,7 @@
             <button id="delete-part" disabled>删除选中部件</button>
           </div>
           <div id="add-section" hidden>
+            <p id="add-origin" role="status"></p>
             <div id="add-anchor-row" class="editor-row">
               <button data-anchor="start">从起点A添加</button><button data-anchor="end">从终点B添加</button>
             </div>
@@ -673,6 +682,8 @@
       null
     </script>
     <script>
+      // 保留初始界面，导出时只嵌入已确认的方案。
+      const editorTemplate = document.documentElement.cloneNode(true);
       let model = {
         pipes: [
           { a: [0, 0, 0], b: [1, 0, 0], group: "底座", id: "P001", start: "J001", end: "J002" },
@@ -1005,7 +1016,7 @@
       function perspective(aspect) {
         const f = 1 / Math.tan((Math.PI * 39) / 360),
           near = 0.05,
-          far = 100;
+          far = Math.max(100, camera.distance + 150);
         return new Float32Array([
           f / aspect,
           0,
@@ -1289,7 +1300,9 @@
           const label = $(id);
           if (id.startsWith("marker")) {
             const fixed = (id === "marker-a") === ($("anchor").value === "start");
-            label.textContent = pipe ? (id === "marker-a" ? "A" : "B") + (fixed ? " 固定端" : " 移动端") : "";
+            const resizing = pendingResize || !$("adjust-section").hidden;
+            const suffix = resizing ? (fixed ? " 固定端" : " 移动端") : (fixed ? " 添加端" : "");
+            label.textContent = pipe ? (id === "marker-a" ? "A" : "B") + suffix : "";
           }
           const projected = point && project(point);
           label.hidden = !projected || projected[2] <= 0 || projected[0] < 0 || projected[0] > canvas.clientWidth || projected[1] < 0 || projected[1] > canvas.clientHeight;
@@ -1303,18 +1316,16 @@
         }
       }
       function zoom(factor) {
-        camera.distance = Math.min(80, Math.max(3, camera.distance * factor));
+        camera.distance = Math.min(3000, Math.max(3, camera.distance * factor));
         requestRender();
       }
       function setView(view) {
-        camera.target = [1.5, 1, 1.8];
-        camera.distance = canvas.clientWidth < 600 ? 11 : 8.6;
         camera.azimuth = view === "front" ? -Math.PI / 2 : view === "side" ? 0 : -1.03;
         camera.polar = view === "top" ? 0.025 : view === "perspective" ? 1.11 : Math.PI / 2;
         document
           .querySelectorAll("[data-view]")
           .forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === view)));
-        requestRender();
+        fitModel();
       }
       function pan(dx, dy) {
         const eye = cameraEye(),
@@ -1743,6 +1754,8 @@
           }
         }
       }
+      // Cache values, not object references: imported or edited coordinates must be revalidated.
+      let validatedGeometry = new Map();
       function constructModel(pipes, choices = {}) {
         if (!Array.isArray(pipes) || pipes.length > 500) throw new Error("方案最多支持500根管。");
         const clean = [],
@@ -1767,7 +1780,11 @@
             group: typeof pipe.group === "string" && /^[\u4e00-\u9fa5]{1,12}$/.test(pipe.group) ? pipe.group : "自定义"
           });
         }
-        for (let a = 0; a < clean.length; a++) for (let b = a + 1; b < clean.length; b++) validateSegmentPair(clean[a], clean[b]);
+        const geometry = new Map(clean.map(pipe => [pipe.id, JSON.stringify([pipe.a, pipe.b])]));
+        const unchanged = clean.map(pipe => validatedGeometry.get(pipe.id) === geometry.get(pipe.id));
+        for (let a = 0; a < clean.length; a++)
+          for (let b = a + 1; b < clean.length; b++)
+            if (!unchanged[a] || !unchanged[b]) validateSegmentPair(clean[a], clean[b]);
         const existing = new Map(model.joints.map(j => [positionKey(j.p), j.id]));
         let nextJoint = Math.max(0, ...model.joints.map(j => Number(j.id.slice(1)))) + 1;
         const jointsByKey = new Map();
@@ -1799,6 +1816,7 @@
           joint.availablePorts = match.ports;
           counts[joint.type] = (counts[joint.type] || 0) + 1;
         }
+        validatedGeometry = geometry;
         return { pipes: clean, joints: [...jointsByKey.values()], counts };
       }
       function report(message, isError = false) {
@@ -1892,19 +1910,24 @@
         return "P" + String(Math.max(0, ...model.pipes.map(p => Number(p.id.slice(1)))) + 1).padStart(3, "0");
       }
       function fitModel() {
-        if (!model.joints.length) {
-          setView("perspective");
-          return;
+        const points = model.joints.map(j => expandedPoint(j.p));
+        for (const pipe of model.pipes) {
+          const displayed = displayedPipe(pipe);
+          points.push(displayed.a, displayed.b);
         }
-        const min = [0, 1, 2].map(i => Math.min(...model.joints.map(j => expandedPoint(j.p)[i]))),
-          max = [0, 1, 2].map(i => Math.max(...model.joints.map(j => expandedPoint(j.p)[i])));
-        camera.target = min.map((value, i) => (value + max[i]) / 2);
-        const radius = Math.hypot(...sub(max, min)) / 2;
-        const aspect = canvas.clientWidth / canvas.clientHeight;
-        camera.distance = Math.max(
-          3,
-          Math.min(80, (radius / Math.sin(Math.atan(Math.tan((Math.PI * 39) / 360) * Math.min(1, aspect)))) * 1.2)
-        );
+        if (showAccessories && explosion === 0) points.push([0, 0, 0], [3, 2, 4]);
+        if (!points.length) {
+          camera.target = [0, 0, 0.5];
+          camera.distance = 3;
+        } else {
+          const min = [0, 1, 2].map(i => Math.min(...points.map(p => p[i]))),
+            max = [0, 1, 2].map(i => Math.max(...points.map(p => p[i])));
+          camera.target = min.map((value, i) => (value + max[i]) / 2);
+          const radius = Math.hypot(...sub(max, min)) / 2 + 0.17;
+          const aspect = Math.max(0.1, canvas.clientWidth / Math.max(1, canvas.clientHeight));
+          const halfAngle = Math.atan(Math.tan((Math.PI * 39) / 360) * Math.min(1, aspect));
+          camera.distance = Math.max(3, (radius / Math.sin(halfAngle)) * 1.12);
+        }
         requestRender();
       }
       function downloadFile(name, content, type) {
@@ -2089,6 +2112,7 @@
         safely(() => {
           if (model.pipes.length && !confirm("新建空白方案？当前编辑可撤销，也可先导出保存。")) return;
           commit([], {}, "", false);
+          setView("perspective");
           switchEditorTab("add");
           report("选择长度和方向，从原点添加第一根管。");
         })
@@ -2142,7 +2166,7 @@
         }
       });
       $("export-html").addEventListener("click", () => {
-        const clone = document.documentElement.cloneNode(true);
+        const clone = editorTemplate.cloneNode(true);
         clone.querySelector("#saved-design").textContent = JSON.stringify({ ...serializedDesign(), draftId: crypto.randomUUID() }).replaceAll("<", "\\u003c");
         downloadFile("我的攀爬架编辑器.html", "<!doctype html>\r\n" + clone.outerHTML, "text/html;charset=utf-8");
         report("已导出包含当前方案的完整HTML，可离线编辑。");
@@ -2164,6 +2188,7 @@
           $(name + "-section").hidden = name !== tab;
           $("tab-" + name).setAttribute("aria-pressed", String(name === tab));
         }
+        requestRender();
       }
       for (const name of ["adjust", "add", "files"]) $("tab-" + name).addEventListener("click", () => switchEditorTab(name));
       $("confirm-add").addEventListener("click", () =>
@@ -2172,6 +2197,8 @@
           const pipe = pendingPipe;
           commit([...model.pipes, pipe], connectorChoices, pipe.id);
           $("anchor").value = "end";
+          syncChoices();
+          requestRender();
           report("已添加。继续选方向可从这根管的末端接下一根。");
         })
       );
@@ -2231,6 +2258,11 @@
           syncChoices();
         });
       function syncChoices() {
+        const part = partsById.get(selectedId);
+        const point = part ? selectedAnchor() : null;
+        $("add-origin").textContent = part
+          ? `从 ${part.id}${part.p ? "" : $("anchor").value === "start" ? " 的起点 A" : " 的终点 B"} 添加 · ${cmPosition(point).join(" / ")} cm`
+          : model.pipes.length ? "先选择一个接头或管子，作为添加起点。" : "从原点添加第一根管 · 0 / 0 / 0 cm";
         document
           .querySelectorAll("[data-anchor]")
           .forEach(b => b.setAttribute("aria-pressed", String(b.dataset.anchor === $("anchor").value)));
